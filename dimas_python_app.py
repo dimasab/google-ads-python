@@ -28,7 +28,6 @@ def python_cek_produk_seller():
     tidak_kosong = True
     products_offers_endpoint = "https://ads.ruanglaptop.com/wp-json/wp/v2/produk_saya/"
     parameter_produk = {
-        '_fields': 'acf',
         'per_page': per_halaman,
         'page': halaman
     }
@@ -41,52 +40,17 @@ def python_cek_produk_seller():
                     params = parameter_produk,
                     headers = headers)
                 for data in response.json():
-                    array_single_item.append(data.get("acf"))
-                if len(data.get("acf")) < 1:
+                    if "acf" not in data:
+                        tidak_kosong = False
+                        break
+                    array_single_item.append(data)
+                if "acf" not in data:
                     tidak_kosong = False
                 halaman += 1
                 parameter_produk['page'] = halaman  # updating parameter
             except Exception as e:
                 print(f"Cek produk seller halaman {halaman} menghasilkan eror. Exception info: {e} . Cek produk selesai.")
                 break
-
-        # for single_item in array_single_item:
-        #     productLink_value = single_item.get("url_{0}".format(single_item.get("target_klik")))
-        #     namaEcommerce_value = single_item.get("target_klik")
-        #     productName_value = single_item.get("nama_produk")
-        #     price_value = single_item.get("harga_produk")
-        #     image_ID = single_item.get("foto_produk")
-        #     sales_value = single_item.get("jumlah_terjual")
-        #     shopName_value = single_item.get("nama_toko")
-        #     namaBarang_value = single_item.get("jenis_produk")
-        #     namaMerek_value = single_item.get("merek_produk")
-        #     lokasiToko_value = single_item.get("lokasi_toko")
-        #     statusAktif_value = single_item.get("status_aktif")
-        #     statusAktifDariSeller_value = single_item.get("status_aktif_dari_seller")
-        #     google_ads_campaign_id_value = single_item.get("google_ads_campaign_id")
-        #     imageUrl_value = ''
-        #     try:
-        #         image_response = requests.get("https://ads.ruanglaptop.com/wp-json/wp/v2/media/{0}?_fields=media_details".format(image_ID), headers=headers)
-        #         imageUrl_value = "https://ads.ruanglaptop.com/wp-content/uploads/{0}".format(image_response.json().get("media_details").get("file"))
-        #     except Exception as e:
-        #         print(e)
-        #     objekProduk = {
-        #         "productName": productName_value,
-        #         "price": price_value,
-        #         "imageUrl": imageUrl_value,
-        #         "sales": sales_value,
-        #         "shopName": shopName_value,
-        #         "productLink": productLink_value,
-        #         "namaBarang": namaBarang_value,
-        #         "namaMerek": namaMerek_value,
-        #         "namaEcommerce": namaEcommerce_value,
-        #         "lokasiToko": lokasiToko_value,
-        #         "statusAktif": statusAktif_value,
-        #         "statusAktifDariSeller": statusAktifDariSeller_value,
-        #         "googleAdsCampaignId": google_ads_campaign_id_value
-        #     }
-        #     array_objekProduk.append(objekProduk)
-        # finalResult = json.dumps(array_objekProduk)
         finalResult = json.dumps(array_single_item)
         return Response(finalResult, content_type='application/json')
     except Exception as e:
@@ -807,14 +771,14 @@ def semua():
         #         # Here you can write your POST request to Google API
         # else:
         #     print('Campaign ID is empty')
-        print('untuk produk ID '+str(product['single_item_id'])+', ID campaign google ads nya adalah '+str(product['google_ads_campaign_id']))
+        print('untuk produk ID '+str(product.get("acf")['single_item_id'])+', ID campaign google ads nya adalah '+str(product.get("acf")['google_ads_campaign_id']))
         # cek udah ada id google ads campaign belum
-        if product['google_ads_campaign_id']:
+        if product.get("acf")['google_ads_campaign_id']:
             #cek apa id campaign nya, dan bikin POST untuk update
-            print('-akan update produk di campaign nomor '+str(product['google_ads_campaign_id']))
+            print('-akan update produk di campaign nomor '+str(product.get("acf")['google_ads_campaign_id']))
         else:
             #buat POST ke google ads untuk bikin campaign baru
-            print('-akan buat campaign baru untuk produk ID '+str(product['single_item_id']))
+            print('-akan buat campaign baru untuk produk ID '+str(product.get("acf")['single_item_id']))
             # Call the third app to create products
             try:
                 response_bikin_campaign_googleads = requests.get("http://localhost:5001/python-bikin-campaign-googleads")
@@ -822,7 +786,7 @@ def semua():
 
                 if response_bikin_campaign_googleads.status_code == 200:
                     try:
-                        print("status ok 200, perlu POST campaign ID "+str(response_bikin_campaign_googleads.json())+" ke field google_ads_campaign_id di produk ID "+str(product['single_item_id']))
+                        print("status ok 200, perlu POST campaign ID "+str(response_bikin_campaign_googleads.json())+" ke field google_ads_campaign_id di post produk_saya ID "+str(product['id']))
                     except Exception as e:
                         print(f'An error occurred: {e}')
                 else:
