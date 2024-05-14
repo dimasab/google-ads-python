@@ -664,49 +664,14 @@ def python_bikin_campaign_googleads():
 
 
     if __name__ == "__main__":
-        # parser = argparse.ArgumentParser(
-        #     description=("Creates a Responsive Search Ad for specified customer.")
-        # )
-        # # The following argument(s) should be provided to run the example.
-        # parser.add_argument(
-        #     "-c",
-        #     "--customer_id",
-        #     type=str,
-        #     required=True,
-        #     help="The Google Ads customer ID.",
-        # )
+
         customer_id = "6252346754"
-
-        # # The name of the customizer attribute used in the ad customizer, which
-        # # must be unique for a given customer account. To run this example multiple
-        # # times, specify a unique value as a command line argument. Note that there is
-        # # a limit for the number of enabled customizer attributes in one account
-        # # For more details visit:
-        # # https://developers.google.com/google-ads/api/docs/ads/customize-responsive-search-ads#rules_and_limitations
-        # parser.add_argument(
-        #     "-n",
-        #     "--customizer_attribute_name",
-        #     type=str,
-        #     default=None,
-        #     help=(
-        #         "The name of the customizer attribute to be created. The name must "
-        #         "be unique across a client account, so be sure not to use "
-        #         "the same value more than once."
-        #     ),
-        # )
-
-        # args = parser.parse_args()
 
         # GoogleAdsClient will read the google-ads.yaml configuration file in the
         # home directory if none is specified.
         googleads_client = GoogleAdsClient.load_from_storage(path='./google-ads.yaml', version='v16')
 
         try:
-            # main(
-            #     googleads_client,
-            #     args.customer_id,
-            #     args.customizer_attribute_name,
-            # )
             main(googleads_client, customer_id)
             return Response(campaign_baru, content_type='application/json')
         except GoogleAdsException as ex:
@@ -722,6 +687,119 @@ def python_bikin_campaign_googleads():
             sys.exit(1)
 
 ######################################################## SELESAI APP ########################################################
+
+
+
+
+
+
+
+
+
+######################################################## MULAI APP ########################################################
+def pasang_campaign_id_ke_acf(id_post_produk, data_acf):
+    print("/pasang-campaign-id-ke-acf terpanggil")
+
+    products_offers_endpoint = f"https://ads.ruanglaptop.com/wp-json/wp/v2/produk_saya/{id_post_produk}"
+    headers = {'Authorization': 'Bearer {}'.format(os.getenv('json_web_token'))}
+    body = {
+        'acf': data_acf
+    }
+
+    try:
+        response = requests.post(
+            url = products_offers_endpoint,
+            headers = headers,
+            json = body
+        )
+        
+        return Response(response.content, content_type='application/json', status=response.status_code)
+
+    except Exception as e:
+        app.logger.error(f"An error occurred: {e}")
+        return Response("An error occurred while processing your request.", status=500)
+    except ValueError:
+        app.logger.error("Response content is not valid JSON")
+        return Response("Invalid response from server.", status=500)
+    except Exception as e:
+        app.logger.error(f"An unexpected error occurred: {e}")
+        return Response("An error occurred while processing your request.", status=500)
+######################################################## SELESAI APP ########################################################
+
+
+
+
+
+
+
+
+######################################################## MULAI APP ########################################################
+def python_cek_campaign_id_produk_spesifik(id_post_produk):
+    print("/python_cek_campaign_id_produk_spesifik terpanggil")
+
+    products_offers_endpoint = f"https://ads.ruanglaptop.com/wp-json/wp/v2/produk_saya/{id_post_produk}"
+    headers = {'Authorization': 'Bearer {}'.format(os.getenv('json_web_token'))}
+    try:
+        response = requests.get(
+            url = products_offers_endpoint,
+            headers = headers
+        )
+        return response.json()
+    except Exception as e:
+        app.logger.error(f"An error occurred: {e}")
+        return Response("An error occurred while processing your request.", status=500)
+######################################################## SELESAI APP ########################################################
+
+
+
+
+
+
+
+
+
+######################################################## MULAI APP ########################################################
+def python_hapus_campaign_googleads(campaign_id):
+    print("/python-hapus-campaign-googleads terpanggil")
+
+    def main(client, customer_id, campaign_id):
+        campaign_service = client.get_service("CampaignService")
+        campaign_operation = client.get_type("CampaignOperation")
+
+        resource_name = campaign_service.campaign_path(customer_id, campaign_id)
+        campaign_operation.remove = resource_name
+
+        campaign_response = campaign_service.mutate_campaigns(
+            customer_id=customer_id, operations=[campaign_operation]
+        )
+
+        print(f"Removed campaign {campaign_response.results[0].resource_name}.")
+
+
+    if __name__ == "__main__":
+
+        customer_id = "6252346754"
+
+        # GoogleAdsClient will read the google-ads.yaml configuration file in the
+        # home directory if none is specified.
+        googleads_client = GoogleAdsClient.load_from_storage(path='./google-ads.yaml', version='v16')
+
+        try:
+            main(googleads_client, customer_id, campaign_id)
+        except GoogleAdsException as ex:
+            print(
+                f'Request with ID "{ex.request_id}" failed with status '
+                f'"{ex.error.code().name}" and includes the following errors:'
+            )
+            for error in ex.failure.errors:
+                print(f'\tError with message "{error.message}".')
+                if error.location:
+                    for field_path_element in error.location.field_path_elements:
+                        print(f"\t\tOn field: {field_path_element.field_name}")
+            sys.exit(1)
+######################################################## SELESAI APP ########################################################
+
+
 
 
 
@@ -752,26 +830,10 @@ def semua():
         array_produk_seller = response_produk_seller.json()
     except Exception as e:
         app.logger.error(f"An error occurred while calling python_cek_produk_seller app: {e}")
-    
-    # # Call the second app to get array of campaign IDs from Google Ads
-    # try:
-    #     response_campaign_googleads = requests.get("http://localhost:5001/python-cek-campaign-googleads")
-    #     array_campaign_googleads = response_campaign_googleads.json()
-    # except Exception as e:
-    #     app.logger.error(f"An error occurred while calling python_cek_campaign_googleads app: {e}")
 
     for product in array_produk_seller:
-        # Check if 'google_ads_campaign_id' is not empty
-        # if product['google_ads_campaign_id']:
-        #     # Then check if the 'google_ads_campaign_id' exists in 'campaign_googleads'
-        #     if product['google_ads_campaign_id'] in array_campaign_googleads:
-        #         print('Campaign ID exists')
-        #     else:
-        #         print('Campaign ID does not exist')
-        #         # Here you can write your POST request to Google API
-        # else:
-        #     print('Campaign ID is empty')
-        print('untuk produk ID '+str(product.get("acf")['single_item_id'])+', ID campaign google ads nya adalah '+str(product.get("acf")['google_ads_campaign_id']))
+        print('untuk produk_saya ID '+str(product['id'])+', ID campaign google ads nya adalah '+str(product.get("acf")['google_ads_campaign_id']))
+
         # cek udah ada id google ads campaign belum
         if product.get("acf")['google_ads_campaign_id']:
             #cek apa id campaign nya, dan bikin POST untuk update
@@ -786,11 +848,33 @@ def semua():
 
                 if response_bikin_campaign_googleads.status_code == 200:
                     try:
-                        print("status ok 200, perlu POST campaign ID "+str(response_bikin_campaign_googleads.json())+" ke field google_ads_campaign_id di post produk_saya ID "+str(product['id']))
+                        id_post_produk = product['id']
+                        data_acf = product.get("acf").copy()
+                        data_acf['google_ads_campaign_id'] = int(response_bikin_campaign_googleads.json()) #pasang campaign id yang baru terbuat ke data acf produk
+                        print(f'Post ke produk_saya ID {id_post_produk} untuk campagin ID {data_acf['google_ads_campaign_id']}')
+                        try:
+                            pasang_campaign_id_ke_acf(id_post_produk, data_acf)
+                            cek_campaign_baru_di_acf_produk = python_cek_campaign_id_produk_spesifik(id_post_produk)
+                            print("akan print hasil cek campaign")
+                            campaign_id_di_produk = cek_campaign_baru_di_acf_produk.get("acf")['google_ads_campaign_id']
+                            print(campaign_id_di_produk)
+
+                            if campaign_id_di_produk != data_acf['google_ads_campaign_id']:
+                                print("tidak sama")
+                                try:
+                                    ngapus = python_hapus_campaign_googleads(data_acf['google_ads_campaign_id'])
+                                    print(ngapus)
+                                except Exception as e:
+                                    print(f'An error occurred: {e}')
+                            else:
+                                print("sama")
+
+                        except Exception as e:
+                            print(f'An error occurred: {e}')
                     except Exception as e:
                         print(f'An error occurred: {e}')
                 else:
-                    print("status tidak ok")
+                    print("status bikin campaign tidak 200 ok")
 
             except Exception as e:
                 app.logger.error(f"An error occurred while calling python_cek_campaign_googleads app: {e}")
@@ -798,7 +882,6 @@ def semua():
 
     array_gabungan = {
         'array_produk_seller': array_produk_seller,
-        # 'array_campaign_googleads': array_campaign_googleads,
         'array_bikin_campaign_googleads': array_bikin_campaign_googleads
     }
     
