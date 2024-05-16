@@ -124,12 +124,17 @@ def python_cek_campaign_googleads():
 
 
 ######################################################## MULAI APP ########################################################
-@app.route('/python-bikin-campaign-googleads', methods=['GET'])
+# @app.route('/python-bikin-campaign-googleads', methods=['GET'])
 #modifikasi dari add_responsive_search_ad_full
-def python_bikin_campaign_googleads():
+def python_bikin_campaign_googleads(namaproduk, urltarget):
+
+    namaproduk = namaproduk
+    urltarget = urltarget
+
     print("/python-bikin-campaign-googleads terpanggil")
 
-    campaign_baru = []
+    # campaign_baru = []
+    # id_kampanye = None
 
     # Keywords from user.
     KEYWORD_TEXT_EXACT = "example of exact match"
@@ -182,7 +187,7 @@ def python_bikin_campaign_googleads():
         )
 
         create_ad_group_ad(
-            client, customer_id, ad_group_resource_name, customizer_attribute_name
+            client, customer_id, ad_group_resource_name, customizer_attribute_name, urltarget
         )
 
         add_keywords(client, customer_id, ad_group_resource_name)
@@ -350,6 +355,7 @@ def python_bikin_campaign_googleads():
         Returns:
         Campaign resource name.
         """
+        global id_kampanye
         campaign_service = client.get_service("CampaignService")
         campaign_operation = client.get_type("CampaignOperation")
         campaign = campaign_operation.create
@@ -398,9 +404,6 @@ def python_bikin_campaign_googleads():
         bagian = resource_name.split("/")
         # Get the part after "campaigns"
         id_kampanye = bagian[bagian.index("campaigns") + 1]
-        print(id_kampanye)
-        campaign_baru.append(id_kampanye)
-
         return resource_name
 
 
@@ -437,7 +440,7 @@ def python_bikin_campaign_googleads():
 
 
     def create_ad_group_ad(
-        client, customer_id, ad_group_resource_name, customizer_attribute_name
+        client, customer_id, ad_group_resource_name, customizer_attribute_name, urltarget
     ):
         """Creates ad group ad.
 
@@ -462,7 +465,7 @@ def python_bikin_campaign_googleads():
         # https://developers.google.com/google-ads/api/reference/rpc/latest/ResponsiveSearchAdInfo
 
         # The list of possible final URLs after all cross-domain redirects for the ad.
-        ad_group_ad.ad.final_urls.append("https://www.example.com/")
+        ad_group_ad.ad.final_urls.append(urltarget)
 
         # Set a pinning to always choose this asset for HEADLINE_1. Pinning is
         # optional; if no pinning is set, then headlines and descriptions will be
@@ -471,7 +474,7 @@ def python_bikin_campaign_googleads():
         # Headline 1
         served_asset_enum = client.enums.ServedAssetFieldTypeEnum.HEADLINE_1
         pinned_headline = create_ad_text_asset(
-            client, "Headline 1 testing", served_asset_enum
+            client, namaproduk, served_asset_enum
         )
 
         # Headline 2 and 3
@@ -502,8 +505,8 @@ def python_bikin_campaign_googleads():
         # First and second part of text that can be appended to the URL in the ad.
         # If you use the examples below, the ad will show
         # https://www.example.com/all-inclusive/deals
-        ad_group_ad.ad.responsive_search_ad.path1 = "all-inclusive"
-        ad_group_ad.ad.responsive_search_ad.path2 = "deals"
+        # ad_group_ad.ad.responsive_search_ad.path1 = "all-inclusive"
+        # ad_group_ad.ad.responsive_search_ad.path2 = "deals"
 
         # Send a request to the server to add a responsive search ad.
         ad_group_ad_response = ad_group_ad_service.mutate_ad_group_ads(
@@ -673,7 +676,8 @@ def python_bikin_campaign_googleads():
 
         try:
             main(googleads_client, customer_id)
-            return Response(campaign_baru, content_type='application/json')
+            print (f"akan mereturn {id_kampanye}")
+            return id_kampanye
         except GoogleAdsException as ex:
             print(
                 f'Request with ID "{ex.request_id}" failed with status '
@@ -843,23 +847,39 @@ def semua():
             print('-akan buat campaign baru untuk produk ID '+str(product.get("acf")['single_item_id']))
             # Call the third app to create products
             try:
-                response_bikin_campaign_googleads = requests.get("http://localhost:5001/python-bikin-campaign-googleads")
-                array_bikin_campaign_googleads.append(response_bikin_campaign_googleads.json())
+                # response_bikin_campaign_googleads = requests.get("http://localhost:5001/python-bikin-campaign-googleads")
+                namaproduk = product.get('acf')['nama_produk']
 
-                if response_bikin_campaign_googleads.status_code == 200:
+                targetklik = product.get('acf')['target_klik']
+                urltarget = product.get('acf')[f'url_{targetklik}']
+
+                print(f"urltarget adalah {urltarget}")
+
+                print(f"mulai bikin campaign dengan nama produk {namaproduk}")
+                response_bikin_campaign_googleads = python_bikin_campaign_googleads(namaproduk, urltarget)
+
+
+                print(f"response_bikin_campaign_googleads adalah {response_bikin_campaign_googleads}")
+
+
+                array_bikin_campaign_googleads.append(response_bikin_campaign_googleads)
+
+                if response_bikin_campaign_googleads:
                     try:
                         id_post_produk = product['id']
                         data_acf = product.get("acf").copy()
-                        data_acf['google_ads_campaign_id'] = int(response_bikin_campaign_googleads.json()) #pasang campaign id yang baru terbuat ke data acf produk
+                        data_acf['google_ads_campaign_id'] = str(response_bikin_campaign_googleads) #pasang campaign id yang baru terbuat ke data acf produk
                         print(f'Post ke produk_saya ID {id_post_produk} untuk campagin ID {data_acf['google_ads_campaign_id']}')
                         try:
                             pasang_campaign_id_ke_acf(id_post_produk, data_acf)
                             cek_campaign_baru_di_acf_produk = python_cek_campaign_id_produk_spesifik(id_post_produk)
                             print("akan print hasil cek campaign")
                             campaign_id_di_produk = cek_campaign_baru_di_acf_produk.get("acf")['google_ads_campaign_id']
-                            print(campaign_id_di_produk)
 
-                            if campaign_id_di_produk != data_acf['google_ads_campaign_id']:
+                            print(f"campaign id di produk adalah {campaign_id_di_produk}")
+                            print(f"data acf id adalah {data_acf['google_ads_campaign_id']}")
+
+                            if str(campaign_id_di_produk).strip() != str(data_acf['google_ads_campaign_id']).strip():
                                 print("tidak sama")
                                 try:
                                     ngapus = python_hapus_campaign_googleads(data_acf['google_ads_campaign_id'])
@@ -877,7 +897,7 @@ def semua():
                     print("status bikin campaign tidak 200 ok")
 
             except Exception as e:
-                app.logger.error(f"An error occurred while calling python_cek_campaign_googleads app: {e}")
+                app.logger.error(f"An error occurred while calling python_bikin_campaign_googleads app: {e}")
     
 
     array_gabungan = {
