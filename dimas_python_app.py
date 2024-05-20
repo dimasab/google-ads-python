@@ -8,6 +8,7 @@ from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 from dotenv import load_dotenv
 import uuid
+import datetime
 load_dotenv()   # take environment variables from .env.
 
 app = Flask(__name__)
@@ -126,10 +127,7 @@ def python_cek_campaign_googleads():
 ######################################################## MULAI APP ########################################################
 # @app.route('/python-bikin-campaign-googleads', methods=['GET'])
 #modifikasi dari add_responsive_search_ad_full
-def python_bikin_campaign_googleads(namaproduk, urltarget):
-
-    namaproduk = namaproduk
-    urltarget = urltarget
+def python_bikin_campaign_googleads(namaproduk, urltarget, durasibulan):
 
     print("/python-bikin-campaign-googleads terpanggil")
 
@@ -179,7 +177,7 @@ def python_bikin_campaign_googleads(namaproduk, urltarget):
         campaign_budget = create_campaign_budget(client, customer_id)
 
         campaign_resource_name = create_campaign(
-            client, customer_id, campaign_budget
+            client, customer_id, campaign_budget, durasibulan
         )
 
         ad_group_resource_name = create_ad_group(
@@ -344,7 +342,7 @@ def python_bikin_campaign_googleads(namaproduk, urltarget):
         return campaign_budget_response.results[0].resource_name
 
 
-    def create_campaign(client, customer_id, campaign_budget):
+    def create_campaign(client, customer_id, campaign_budget, durasibulan):
         """Creates campaign resource.
 
         Args:
@@ -363,6 +361,9 @@ def python_bikin_campaign_googleads(namaproduk, urltarget):
         campaign.advertising_channel_type = (
             client.enums.AdvertisingChannelTypeEnum.SEARCH
         )
+
+        durasihari = durasibulan*31
+        _DATE_FORMAT = "%Y-%m-%d"
 
         # Recommendation: Set the campaign to PAUSED when creating it to prevent
         # the ads from immediately serving. Set to ENABLED once you've added
@@ -386,12 +387,12 @@ def python_bikin_campaign_googleads(namaproduk, urltarget):
         campaign.network_settings.target_content_network = True
 
         # # Optional: Set the start date.
-        # start_time = datetime.date.today() + datetime.timedelta(days=1)
-        # campaign.start_date = datetime.date.strftime(start_time, _DATE_FORMAT)
+        start_time = datetime.date.today() + datetime.timedelta(days=0)
+        campaign.start_date = datetime.date.strftime(start_time, _DATE_FORMAT)
 
         # # Optional: Set the end date.
-        # end_time = start_time + datetime.timedelta(weeks=4)
-        # campaign.end_date = datetime.date.strftime(end_time, _DATE_FORMAT)
+        end_time = start_time + datetime.timedelta(days=durasihari)
+        campaign.end_date = datetime.date.strftime(end_time, _DATE_FORMAT)
 
         # Add the campaign.
         campaign_response = campaign_service.mutate_campaigns(
@@ -852,11 +853,12 @@ def semua():
 
                 targetklik = product.get('acf')['target_klik']
                 urltarget = product.get('acf')[f'url_{targetklik}']
+                durasibulan = product.get('acf')['durasi_listing_bulan']
 
                 print(f"urltarget adalah {urltarget}")
 
                 print(f"mulai bikin campaign dengan nama produk {namaproduk}")
-                response_bikin_campaign_googleads = python_bikin_campaign_googleads(namaproduk, urltarget)
+                response_bikin_campaign_googleads = python_bikin_campaign_googleads(namaproduk, urltarget, durasibulan)
 
 
                 print(f"response_bikin_campaign_googleads adalah {response_bikin_campaign_googleads}")
