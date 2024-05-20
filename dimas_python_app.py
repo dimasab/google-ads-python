@@ -127,7 +127,7 @@ def python_cek_campaign_googleads():
 ######################################################## MULAI APP ########################################################
 # @app.route('/python-bikin-campaign-googleads', methods=['GET'])
 #modifikasi dari add_responsive_search_ad_full
-def python_bikin_campaign_googleads(namaproduk, urltarget, durasibulan):
+def python_bikin_campaign_googleads(namaproduk, urltarget, durasihari, budgetcampaign):
 
     print("/python-bikin-campaign-googleads terpanggil")
 
@@ -140,18 +140,18 @@ def python_bikin_campaign_googleads(namaproduk, urltarget, durasibulan):
     KEYWORD_TEXT_BROAD = "example of broad match"
 
     # Geo targeting from user.
-    GEO_LOCATION_1 = "Buenos aires"
-    GEO_LOCATION_2 = "San Isidro"
-    GEO_LOCATION_3 = "Mar del Plata"
+    GEO_LOCATION_1 = "kota jakarta pusat"
+    GEO_LOCATION_2 = "kabupaten bandung barat"
+    GEO_LOCATION_3 = "kota bogor"
 
     # LOCALE and COUNTRY_CODE are used for geo targeting.
     # LOCALE is using ISO 639-1 format. If an invalid LOCALE is given,
     # 'es' is used by default.
-    LOCALE = "es"
+    LOCALE = "id"
 
     # A list of country codes can be referenced here:
     # https://developers.google.com/google-ads/api/reference/data/geotargets
-    COUNTRY_CODE = "AR"
+    COUNTRY_CODE = "ID"
 
 
     def main(client, customer_id, customizer_attribute_name=None):
@@ -174,10 +174,10 @@ def python_bikin_campaign_googleads(namaproduk, urltarget, durasibulan):
             )
 
         # Create a budget, which can be shared by multiple campaigns.
-        campaign_budget = create_campaign_budget(client, customer_id)
+        campaign_budget = create_campaign_budget(client, customer_id, durasihari, budgetcampaign)
 
         campaign_resource_name = create_campaign(
-            client, customer_id, campaign_budget, durasibulan
+            client, customer_id, campaign_budget, durasihari
         )
 
         ad_group_resource_name = create_ad_group(
@@ -314,7 +314,7 @@ def python_bikin_campaign_googleads(namaproduk, urltarget, durasibulan):
         return ad_text_asset
 
 
-    def create_campaign_budget(client, customer_id):
+    def create_campaign_budget(client, customer_id, durasihari, budgetcampaign):
         """Creates campaign budget resource.
 
         Args:
@@ -324,6 +324,9 @@ def python_bikin_campaign_googleads(namaproduk, urltarget, durasibulan):
         Returns:
         Campaign budget resource name.
         """
+
+        budgetcampaign_perhari = round(budgetcampaign / durasihari)
+
         # Create a budget, which can be shared by multiple campaigns.
         campaign_budget_service = client.get_service("CampaignBudgetService")
         campaign_budget_operation = client.get_type("CampaignBudgetOperation")
@@ -332,7 +335,7 @@ def python_bikin_campaign_googleads(namaproduk, urltarget, durasibulan):
         campaign_budget.delivery_method = (
             client.enums.BudgetDeliveryMethodEnum.STANDARD
         )
-        campaign_budget.amount_micros = 5000000
+        campaign_budget.amount_micros = budgetcampaign_perhari*1000000
 
         # Add budget.
         campaign_budget_response = campaign_budget_service.mutate_campaign_budgets(
@@ -342,7 +345,7 @@ def python_bikin_campaign_googleads(namaproduk, urltarget, durasibulan):
         return campaign_budget_response.results[0].resource_name
 
 
-    def create_campaign(client, customer_id, campaign_budget, durasibulan):
+    def create_campaign(client, customer_id, campaign_budget, durasihari):
         """Creates campaign resource.
 
         Args:
@@ -362,7 +365,6 @@ def python_bikin_campaign_googleads(namaproduk, urltarget, durasibulan):
             client.enums.AdvertisingChannelTypeEnum.SEARCH
         )
 
-        durasihari = durasibulan*31
         _DATE_FORMAT = "%Y-%m-%d"
 
         # Recommendation: Set the campaign to PAUSED when creating it to prevent
@@ -854,11 +856,13 @@ def semua():
                 targetklik = product.get('acf')['target_klik']
                 urltarget = product.get('acf')[f'url_{targetklik}']
                 durasibulan = product.get('acf')['durasi_listing_bulan']
+                durasihari = durasibulan*31
+                budgetcampaign = product.get('acf')['budget_campaign']
 
                 print(f"urltarget adalah {urltarget}")
 
                 print(f"mulai bikin campaign dengan nama produk {namaproduk}")
-                response_bikin_campaign_googleads = python_bikin_campaign_googleads(namaproduk, urltarget, durasibulan)
+                response_bikin_campaign_googleads = python_bikin_campaign_googleads(namaproduk, urltarget, durasihari, budgetcampaign)
 
 
                 print(f"response_bikin_campaign_googleads adalah {response_bikin_campaign_googleads}")
