@@ -1215,7 +1215,7 @@ def python_update_ad_googleads(google_ads_customer_id, ad_id):
 ###########################################################################################################################
 ###########################################################################################################################
 ######################################################## MULAI APP ########################################################
-def python_update_keyword_googleads(google_ads_customer_id, id_adgroup):
+def python_update_keyword_googleads(google_ads_customer_id, id_adgroup, merekproduk, namaproduk, spesifikasiproduk):
 
     print("/python_update_keyword_googleads terpanggil")
 
@@ -1285,8 +1285,9 @@ def python_update_keyword_googleads(google_ads_customer_id, id_adgroup):
 
             # Add new keywords
             new_keywords = [
-                    "todddddd 1",
-                    "todddddddddddd 2"
+                    merekproduk,
+                    namaproduk,
+                    spesifikasiproduk
                 ]
             add_keywords(client, customer_id, ad_group_resource_name, new_keywords)
 
@@ -1461,7 +1462,7 @@ def semua():
 
             print(f'-Sudah ada campaign id, adgroup id, can ad id. Akan update produk di Campaign ID {id_kampanye}, Adgroup ID {id_adgroup}, dan Ad ID {id_ad}')
             python_update_ad_googleads(google_ads_customer_id, id_ad)
-            python_update_keyword_googleads(google_ads_customer_id, id_adgroup)
+            python_update_keyword_googleads(google_ads_customer_id, id_adgroup, merekproduk, namaproduk, spesifikasiproduk)
         else:
             #buat POST ke google ads untuk bikin campaign baru
             print('-Campaign id, adgroup id, atau ad id belum ada. Akan buat campaign baru untuk produk ID '+str(product.get("acf")['single_item_id']))
