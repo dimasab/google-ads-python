@@ -213,7 +213,7 @@ def python_cek_produk_seller():
 ###########################################################################################################################
 ###########################################################################################################################
 ######################################################## MULAI APP ########################################################
-def python_bikin_campaign_googleads(google_ads_customer_id, merekproduk_cut, namaproduk_cut, spesifikasiproduk_cut, urltarget, durasihari, budgetcampaign, lokasitoko):
+def python_bikin_campaign_googleads(google_ads_customer_id, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, urltarget, durasihari, budgetcampaign, lokasitoko):
 #modifikasi dari add_responsive_search_ad_full
 
     print("/python-bikin-campaign-googleads terpanggil")
@@ -221,10 +221,22 @@ def python_bikin_campaign_googleads(google_ads_customer_id, merekproduk_cut, nam
     # campaign_baru = []
     # id_kampanye = None
 
-    # Keywords from user.
-    KEYWORD_TEXT_EXACT = namaproduk_cut
-    KEYWORD_TEXT_PHRASE = merekproduk_cut+" "+namaproduk_cut+" "+spesifikasiproduk_cut
-    KEYWORD_TEXT_BROAD = merekproduk_cut+" "+namaproduk_cut+" "+spesifikasiproduk_cut
+    # Add new keywords, potong dulu jadi max 80 karakter, lalu potong jadi max 10 kata sesuai aturan google
+    new_keywords_broad = [
+            cut_to_words(cut_string(merekproduk+" "+namaproduk+" "+spesifikasiproduk, 80) , 10),
+        ]
+    new_keywords_phrase = [
+            cut_to_words(cut_string(merekproduk+" "+namaproduk+" "+spesifikasiproduk, 80), 10),
+            cut_to_words(cut_string(merekproduk+" "+namaproduk, 80), 10),
+            cut_to_words(cut_string(merekproduk+" "+spesifikasiproduk, 80), 10),
+            cut_to_words(cut_string(merekproduk+" "+spesifikasiproduk, 80), 10)
+        ]
+    new_keywords_exact = [
+            cut_to_words(cut_string(merekproduk+" "+namaproduk+" "+spesifikasiproduk, 80), 10),
+            cut_to_words(cut_string(merekproduk+" "+namaproduk, 80), 10),
+            cut_to_words(cut_string(merekproduk+" "+spesifikasiproduk, 80), 10),
+            cut_to_words(cut_string(namaproduk+" "+spesifikasiproduk, 80), 10)  
+        ]
 
     # Geo targeting from user.
     GEO_LOCATION_1 = lokasitoko
@@ -275,7 +287,7 @@ def python_bikin_campaign_googleads(google_ads_customer_id, merekproduk_cut, nam
             client, customer_id, ad_group_resource_name, customizer_attribute_name, urltarget
         )
 
-        add_keywords(client, customer_id, ad_group_resource_name)
+        add_keywords(client, customer_id, ad_group_resource_name, new_keywords_broad, new_keywords_phrase, new_keywords_exact)
 
         add_geo_targeting(client, customer_id, campaign_resource_name)
 
@@ -553,6 +565,9 @@ def python_bikin_campaign_googleads(google_ads_customer_id, merekproduk_cut, nam
         Ad group ad resource name.
         """
         global id_ad #id ad yang akan dibuat
+
+        hargaproduk_dengan_rp = "Rp{:,.0f}".format(hargaproduk).replace(",", ".")
+
         ad_group_ad_service = client.get_service("AdGroupAdService")
 
         ad_group_ad_operation = client.get_type("AdGroupAdOperation")
@@ -570,34 +585,69 @@ def python_bikin_campaign_googleads(google_ads_customer_id, merekproduk_cut, nam
         # optional; if no pinning is set, then headlines and descriptions will be
         # rotated and the ones that perform best will be used more often.
 
-        # Headline 1
-        served_asset_enum = client.enums.ServedAssetFieldTypeEnum.HEADLINE_1
-        pinned_headline = create_ad_text_asset(
-            client, merekproduk_cut, served_asset_enum
-        )
+        if len(merekproduk+" "+namaproduk) > 30:
+            #kalau gabungan merekproduk + namaproduk diatas 30 karakter (jadi harus dipisah)
+            # Headline 1, gabungan jenisproduk+merekproduk dipotong max 30 karakter
+            served_asset_enum = client.enums.ServedAssetFieldTypeEnum.HEADLINE_1
+            pinned_headline = create_ad_text_asset(
+                client, 
+                cut_string(jenisproduk.capitalize()+" "+merekproduk.capitalize(), 30), 
+                served_asset_enum
+            )
 
-        # Headline 2 and 3
-        ad_group_ad.ad.responsive_search_ad.headlines.extend(
-            [
-                pinned_headline,
-                create_ad_text_asset(client, namaproduk_cut),
-                create_ad_text_asset(client, spesifikasiproduk_cut),
-            ]
-        )
+            # Headline 2 dan 3 dan 4. Namaproduk dan Spesifikasiproduk dan haragproduk dengan rp dipotong max 30 karakter
+            ad_group_ad.ad.responsive_search_ad.headlines.extend(
+                [
+                    pinned_headline,
+                    create_ad_text_asset(client, cut_string(namaproduk.capitalize(), 30)),
+                    create_ad_text_asset(client, cut_string(spesifikasiproduk.capitalize(), 30)),
+                    create_ad_text_asset(client, cut_string(hargaproduk_dengan_rp, 30)),
+                ]
+            )
+        else:
+            #kalau gabungan merekproduk + namaproduk dibawah 30 karakter (jadi bisa digabung)
+            # Headline 1, gabungan merekproduk+namaproduk dipotong max 30 karakter
+            served_asset_enum = client.enums.ServedAssetFieldTypeEnum.HEADLINE_1
+            pinned_headline = create_ad_text_asset(
+                client, 
+                cut_string(merekproduk.capitalize()+" "+namaproduk.capitalize(), 30), 
+                served_asset_enum
+            )
+
+            # Headline 2 dan 3 dan 4. Spesifikasiproduk dan hargaproduk dipotong max 30 karakter
+            ad_group_ad.ad.responsive_search_ad.headlines.extend(
+                [
+                    pinned_headline,
+                    create_ad_text_asset(client, cut_string(spesifikasiproduk.capitalize(), 30)),
+                    create_ad_text_asset(client, cut_string(hargaproduk_dengan_rp, 30)),
+                ]
+            )
+
+        deskripsi_1 = cut_string("Jual "+jenisproduk+" "+merekproduk.capitalize()+" "+namaproduk+" di "+lokasitoko.replace("_", " "), 90)
+        deskripsi_2 = cut_string(spesifikasiproduk, 90)
+        deskripsi_3 = cut_string("Mulai dari "+hargaproduk_dengan_rp, 90)
 
         # Description 1 and 2
-        description_1 = create_ad_text_asset(client, "Desc 1 testing")
+        description_1 = create_ad_text_asset(client, deskripsi_1)
         description_2 = None
+        description_3 = None
 
         if customizer_attribute_name:
             description_2 = create_ad_text_asset_with_customizer(
                 client, customizer_attribute_name
             )
         else:
-            description_2 = create_ad_text_asset(client, "Desc 2 testing")
+            description_2 = create_ad_text_asset(client, deskripsi_2)
+
+        if customizer_attribute_name:
+            description_3 = create_ad_text_asset_with_customizer(
+                client, customizer_attribute_name
+            )
+        else:
+            description_3 = create_ad_text_asset(client, deskripsi_3)
 
         ad_group_ad.ad.responsive_search_ad.descriptions.extend(
-            [description_1, description_2]
+            [description_1, description_2, description_3]
         )
 
         # Paths
@@ -626,7 +676,7 @@ def python_bikin_campaign_googleads(google_ads_customer_id, merekproduk_cut, nam
             print(f"ad id adalah {id_ad}")
 
 
-    def add_keywords(client, customer_id, ad_group_resource_name):
+    def add_keywords(client, customer_id, ad_group_resource_name, new_keywords_broad, new_keywords_phrase, new_keywords_exact):
         """Creates keywords.
 
         Creates 3 keyword match types: EXACT, PHRASE, and BROAD.
@@ -644,62 +694,66 @@ def python_bikin_campaign_googleads(google_ads_customer_id, merekproduk_cut, nam
         ad_group_criterion_service = client.get_service("AdGroupCriterionService")
 
         operations = []
-        # Create keyword 1.
-        ad_group_criterion_operation = client.get_type("AdGroupCriterionOperation")
-        ad_group_criterion = ad_group_criterion_operation.create
-        ad_group_criterion.ad_group = ad_group_resource_name
-        ad_group_criterion.status = client.enums.AdGroupCriterionStatusEnum.ENABLED
-        ad_group_criterion.keyword.text = KEYWORD_TEXT_EXACT
-        ad_group_criterion.keyword.match_type = (
-            client.enums.KeywordMatchTypeEnum.EXACT
-        )
 
-        # Uncomment the below line if you want to change this keyword to a negative target.
-        # ad_group_criterion.negative = True
+        for keyword_text in new_keywords_broad:
+            # Create keyword broad match.
+            ad_group_criterion_operation = client.get_type("AdGroupCriterionOperation")
+            ad_group_criterion = ad_group_criterion_operation.create
+            ad_group_criterion.ad_group = ad_group_resource_name
+            ad_group_criterion.status = client.enums.AdGroupCriterionStatusEnum.ENABLED
+            ad_group_criterion.keyword.text = keyword_text
+            ad_group_criterion.keyword.match_type = (
+                client.enums.KeywordMatchTypeEnum.BROAD
+            )
 
-        # Optional repeated field
-        # ad_group_criterion.final_urls.append('https://www.example.com')
+            # Uncomment the below line if you want to change this keyword to a negative target.
+            # ad_group_criterion.negative = True
 
-        # Add operation
-        operations.append(ad_group_criterion_operation)
+            # Optional repeated field
+            # ad_group_criterion.final_urls.append('https://www.example.com')
 
-        # Create keyword 2.
-        ad_group_criterion_operation = client.get_type("AdGroupCriterionOperation")
-        ad_group_criterion = ad_group_criterion_operation.create
-        ad_group_criterion.ad_group = ad_group_resource_name
-        ad_group_criterion.status = client.enums.AdGroupCriterionStatusEnum.ENABLED
-        ad_group_criterion.keyword.text = KEYWORD_TEXT_PHRASE
-        ad_group_criterion.keyword.match_type = (
-            client.enums.KeywordMatchTypeEnum.PHRASE
-        )
+            # Add operation
+            operations.append(ad_group_criterion_operation)
 
-        # Uncomment the below line if you want to change this keyword to a negative target.
-        # ad_group_criterion.negative = True
+        for keyword_text in new_keywords_phrase:
+            # Create keyword phrase match.
+            ad_group_criterion_operation = client.get_type("AdGroupCriterionOperation")
+            ad_group_criterion = ad_group_criterion_operation.create
+            ad_group_criterion.ad_group = ad_group_resource_name
+            ad_group_criterion.status = client.enums.AdGroupCriterionStatusEnum.ENABLED
+            ad_group_criterion.keyword.text = keyword_text
+            ad_group_criterion.keyword.match_type = (
+                client.enums.KeywordMatchTypeEnum.PHRASE
+            )
 
-        # Optional repeated field
-        # ad_group_criterion.final_urls.append('https://www.example.com')
+            # Uncomment the below line if you want to change this keyword to a negative target.
+            # ad_group_criterion.negative = True
 
-        # Add operation
-        operations.append(ad_group_criterion_operation)
+            # Optional repeated field
+            # ad_group_criterion.final_urls.append('https://www.example.com')
 
-        # Create keyword 3.
-        ad_group_criterion_operation = client.get_type("AdGroupCriterionOperation")
-        ad_group_criterion = ad_group_criterion_operation.create
-        ad_group_criterion.ad_group = ad_group_resource_name
-        ad_group_criterion.status = client.enums.AdGroupCriterionStatusEnum.ENABLED
-        ad_group_criterion.keyword.text = KEYWORD_TEXT_BROAD
-        ad_group_criterion.keyword.match_type = (
-            client.enums.KeywordMatchTypeEnum.BROAD
-        )
+            # Add operation
+            operations.append(ad_group_criterion_operation)
 
-        # Uncomment the below line if you want to change this keyword to a negative target.
-        # ad_group_criterion.negative = True
+        for keyword_text in new_keywords_exact:
+            # Create keyword exact match.
+            ad_group_criterion_operation = client.get_type("AdGroupCriterionOperation")
+            ad_group_criterion = ad_group_criterion_operation.create
+            ad_group_criterion.ad_group = ad_group_resource_name
+            ad_group_criterion.status = client.enums.AdGroupCriterionStatusEnum.ENABLED
+            ad_group_criterion.keyword.text = keyword_text
+            ad_group_criterion.keyword.match_type = (
+                client.enums.KeywordMatchTypeEnum.EXACT
+            )
 
-        # Optional repeated field
-        # ad_group_criterion.final_urls.append('https://www.example.com')
+            # Uncomment the below line if you want to change this keyword to a negative target.
+            # ad_group_criterion.negative = True
 
-        # Add operation
-        operations.append(ad_group_criterion_operation)
+            # Optional repeated field
+            # ad_group_criterion.final_urls.append('https://www.example.com')
+
+            # Add operation
+            operations.append(ad_group_criterion_operation)
 
         # Add keywords
         ad_group_criterion_response = (
@@ -1091,11 +1145,11 @@ def python_hapus_campaign_googleads(google_ads_customer_id, campaign_id):
 ###########################################################################################################################
 ###########################################################################################################################
 ######################################################## MULAI APP ########################################################
-def python_update_ad_googleads(google_ads_customer_id, ad_id):
+def python_update_ad_googleads(google_ads_customer_id, ad_id, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, lokasitoko):
     print("/python-update-ad-googleads terpanggil")
 
     # [START update_responsive_search_ad]
-    def main(client, customer_id, ad_id):
+    def main(client, customer_id, ad_id, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, lokasitoko):
         ad_service = client.get_service("AdService")
         ad_operation = client.get_type("AdOperation")
 
@@ -1104,30 +1158,60 @@ def python_update_ad_googleads(google_ads_customer_id, ad_id):
         ad.resource_name = ad_service.ad_path(customer_id, ad_id)
 
         # Update some properties of the responsive search ad.
-        headline_1 = client.get_type("AdTextAsset")
-        headline_1.text = f"Headline 1 terupdate #{uuid4().hex[:8]}"
-        headline_1.pinned_field = client.enums.ServedAssetFieldTypeEnum.HEADLINE_1
 
-        headline_2 = client.get_type("AdTextAsset")
-        headline_2.text = "Headline 2 terupdate"
+        hargaproduk_dengan_rp = "Rp{:,.0f}".format(hargaproduk).replace(",", ".")
 
-        headline_3 = client.get_type("AdTextAsset")
-        headline_3.text = "Headline 3 terupdate"
+        if len(merekproduk+" "+namaproduk) > 30:
+            #kalau gabungan merekproduk + namaproduk diatas 30 karakter (jadi harus dipisah)
+            # Headline 1, gabungan jenisproduk+merekproduk dipotong max 30 karakter
+            headline_1 = client.get_type("AdTextAsset")
+            headline_1.text = cut_string(jenisproduk.capitalize()+" "+merekproduk.capitalize(), 30)
+            headline_1.pinned_field = client.enums.ServedAssetFieldTypeEnum.HEADLINE_1
 
-        ad.responsive_search_ad.headlines.extend(
-            [headline_1, headline_2, headline_3]
-        )
+            headline_2 = client.get_type("AdTextAsset")
+            headline_2.text = cut_string(namaproduk.capitalize(), 30)
+
+            headline_3 = client.get_type("AdTextAsset")
+            headline_3.text = cut_string(spesifikasiproduk.capitalize(), 30)
+
+            headline_4 = client.get_type("AdTextAsset")
+            headline_4.text = cut_string(hargaproduk_dengan_rp.capitalize(), 30)
+
+            ad.responsive_search_ad.headlines.extend(
+                [headline_1, headline_2, headline_3, headline_4]
+            )
+        else:
+            #kalau gabungan merekproduk + namaproduk dibawah 30 karakter (jadi bisa digabung)
+            # Headline 1, gabungan merekproduk+namaproduk dipotong max 30 karakter
+            headline_1 = client.get_type("AdTextAsset")
+            headline_1.text = cut_string(merekproduk.capitalize()+" "+namaproduk.capitalize(), 30)
+            headline_1.pinned_field = client.enums.ServedAssetFieldTypeEnum.HEADLINE_1
+
+            headline_2 = client.get_type("AdTextAsset")
+            headline_2.text = cut_string(spesifikasiproduk.capitalize(), 30)
+
+            headline_3 = client.get_type("AdTextAsset")
+            headline_3.text = cut_string(hargaproduk_dengan_rp.capitalize(), 30)
+
+            ad.responsive_search_ad.headlines.extend(
+                [headline_1, headline_2, headline_3]
+            )
+
+        deskripsi_1 = cut_string("Jual "+jenisproduk+" "+merekproduk.capitalize()+" "+namaproduk+" di "+lokasitoko.replace("_", " "), 90)
+        deskripsi_2 = cut_string(spesifikasiproduk, 90)
+        deskripsi_3 = cut_string("Mulai dari "+hargaproduk_dengan_rp, 90)
 
         description_1 = client.get_type("AdTextAsset")
-        description_1.text = "Deskripsi 1 terupdate"
+        description_1.text = deskripsi_1
 
         description_2 = client.get_type("AdTextAsset")
-        description_2.text = (
-            "Deskripsi 2 terupdate"
-        )
+        description_2.text = deskripsi_2
+
+        description_3 = client.get_type("AdTextAsset")
+        description_3.text = deskripsi_3
 
         ad.responsive_search_ad.descriptions.extend(
-            [description_1, description_2]
+            [description_1, description_2, description_3]
         )
 
         ad.final_urls.append("https://www.example.com")
@@ -1150,7 +1234,7 @@ def python_update_ad_googleads(google_ads_customer_id, ad_id):
     if __name__ == "__main__":
         googleads_client = GoogleAdsClient.load_from_storage(path='./google-ads.yaml', version='v16')
         try:
-            main(googleads_client, google_ads_customer_id, ad_id)
+            main(googleads_client, google_ads_customer_id, ad_id, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, lokasitoko)
         except GoogleAdsException as ex:
             print(
                 f'Request with ID "{ex.request_id}" failed with status '
@@ -1253,26 +1337,80 @@ def python_update_keyword_googleads(google_ads_customer_id, id_adgroup, merekpro
         for result in response.results:
             print(f"Removed keyword {result.resource_name}.")
 
-    def add_keywords(client, customer_id, ad_group_resource_name, keyword_texts):
-        """Creates keywords."""
+    def add_keywords(client, customer_id, ad_group_resource_name, new_keywords_broad, new_keywords_phrase, new_keywords_exact):
+        
         ad_group_criterion_service = client.get_service("AdGroupCriterionService")
         operations = []
 
-        for keyword_text in keyword_texts:
+        for keyword_text in new_keywords_broad:
+            # Create keyword broad match.
             ad_group_criterion_operation = client.get_type("AdGroupCriterionOperation")
             ad_group_criterion = ad_group_criterion_operation.create
             ad_group_criterion.ad_group = ad_group_resource_name
             ad_group_criterion.status = client.enums.AdGroupCriterionStatusEnum.ENABLED
             ad_group_criterion.keyword.text = keyword_text
-            ad_group_criterion.keyword.match_type = client.enums.KeywordMatchTypeEnum.BROAD
+            ad_group_criterion.keyword.match_type = (
+                client.enums.KeywordMatchTypeEnum.BROAD
+            )
+
+            # Uncomment the below line if you want to change this keyword to a negative target.
+            # ad_group_criterion.negative = True
+
+            # Optional repeated field
+            # ad_group_criterion.final_urls.append('https://www.example.com')
+
+            # Add operation
             operations.append(ad_group_criterion_operation)
 
-        response = ad_group_criterion_service.mutate_ad_group_criteria(
-            customer_id=customer_id, operations=operations
-        )
+        for keyword_text in new_keywords_phrase:
+            # Create keyword phrase match.
+            ad_group_criterion_operation = client.get_type("AdGroupCriterionOperation")
+            ad_group_criterion = ad_group_criterion_operation.create
+            ad_group_criterion.ad_group = ad_group_resource_name
+            ad_group_criterion.status = client.enums.AdGroupCriterionStatusEnum.ENABLED
+            ad_group_criterion.keyword.text = keyword_text
+            ad_group_criterion.keyword.match_type = (
+                client.enums.KeywordMatchTypeEnum.PHRASE
+            )
 
-        for result in response.results:
-            print(f"Created keyword {result.resource_name}.")
+            # Uncomment the below line if you want to change this keyword to a negative target.
+            # ad_group_criterion.negative = True
+
+            # Optional repeated field
+            # ad_group_criterion.final_urls.append('https://www.example.com')
+
+            # Add operation
+            operations.append(ad_group_criterion_operation)
+
+        for keyword_text in new_keywords_exact:
+            # Create keyword exact match.
+            ad_group_criterion_operation = client.get_type("AdGroupCriterionOperation")
+            ad_group_criterion = ad_group_criterion_operation.create
+            ad_group_criterion.ad_group = ad_group_resource_name
+            ad_group_criterion.status = client.enums.AdGroupCriterionStatusEnum.ENABLED
+            ad_group_criterion.keyword.text = keyword_text
+            ad_group_criterion.keyword.match_type = (
+                client.enums.KeywordMatchTypeEnum.EXACT
+            )
+
+            # Uncomment the below line if you want to change this keyword to a negative target.
+            # ad_group_criterion.negative = True
+
+            # Optional repeated field
+            # ad_group_criterion.final_urls.append('https://www.example.com')
+
+            # Add operation
+            operations.append(ad_group_criterion_operation)
+
+        # Add keywords
+        ad_group_criterion_response = (
+            ad_group_criterion_service.mutate_ad_group_criteria(
+                customer_id=customer_id,
+                operations=operations,
+            )
+        )
+        for result in ad_group_criterion_response.results:
+            print("Created keyword " f"{result.resource_name}.")
 
     def main(client, customer_id, ad_group_resource_name):
         try:
@@ -1283,13 +1421,24 @@ def python_update_keyword_googleads(google_ads_customer_id, id_adgroup, merekpro
             if existing_keywords:
                 remove_keywords(client, customer_id, existing_keywords)
 
-            # Add new keywords
-            new_keywords = [
-                    merekproduk,
-                    namaproduk,
-                    spesifikasiproduk
+            # Add new keywords, potong dulu jadi max 80 karakter, lalu potong jadi max 10 kata sesuai aturan google
+            new_keywords_broad = [
+                    cut_to_words(cut_string(merekproduk+" "+namaproduk+" "+spesifikasiproduk, 80) , 10),
                 ]
-            add_keywords(client, customer_id, ad_group_resource_name, new_keywords)
+            new_keywords_phrase = [
+                    cut_to_words(cut_string(merekproduk+" "+namaproduk+" "+spesifikasiproduk, 80), 10),
+                    cut_to_words(cut_string(merekproduk+" "+namaproduk, 80), 10),
+                    cut_to_words(cut_string(merekproduk+" "+spesifikasiproduk, 80), 10),
+                    cut_to_words(cut_string(merekproduk+" "+spesifikasiproduk, 80), 10)
+                ]
+            new_keywords_exact = [
+                    cut_to_words(cut_string(merekproduk+" "+namaproduk+" "+spesifikasiproduk, 80), 10),
+                    cut_to_words(cut_string(merekproduk+" "+namaproduk, 80), 10),
+                    cut_to_words(cut_string(merekproduk+" "+spesifikasiproduk, 80), 10),
+                    cut_to_words(cut_string(namaproduk+" "+spesifikasiproduk, 80), 10)  
+                ]
+            
+            add_keywords(client, customer_id, ad_group_resource_name, new_keywords_broad, new_keywords_phrase, new_keywords_exact)
 
         except GoogleAdsException as ex:
             print(f"Request with ID '{ex.request_id}' failed with status '{ex.error.code().name}' and includes the following errors:")
@@ -1406,6 +1555,61 @@ def cut_string(input_str, max_length=30):
 
 
 
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+######################################################## MULAI APP ########################################################
+def cut_to_words(input_str, max_words=10):
+    words = input_str.split()
+    
+    if len(words) <= max_words:
+        return input_str
+
+    # Join the first max_words words into a new string
+    return ' '.join(words[:max_words])
+######################################################## SELESAI APP ########################################################
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 
 ###########################################################################################################################
@@ -1436,9 +1640,11 @@ def semua():
     for product in array_produk_seller:
         print('untuk produk_saya ID '+str(product['id'])+', ID campaign google ads nya adalah '+str(product.get("acf")['google_ads_campaign_id']))
 
+        jenisproduk = product.get('acf')['jenis_produk']
         merekproduk = product.get('acf')['merek_produk']
         namaproduk = product.get('acf')['nama_produk']
         spesifikasiproduk = product.get('acf')['spesifikasi_produk']
+        hargaproduk = product.get('acf')['harga_produk']
         targetklik = product.get('acf')['target_klik']
         lokasitoko = product.get('acf')['lokasi_toko']
         urltarget = product.get('acf')[f'url_{targetklik}']
@@ -1446,9 +1652,9 @@ def semua():
         durasihari = durasibulan*31
         budgetcampaign = product.get('acf')['budget_campaign']
 
-        merekproduk_cut = cut_string(merekproduk)
-        namaproduk_cut = cut_string(namaproduk)
-        spesifikasiproduk_cut = cut_string(spesifikasiproduk)
+        merekproduk_cut = cut_string(merekproduk, 30)
+        namaproduk_cut = cut_string(namaproduk, 30)
+        spesifikasiproduk_cut = cut_string(spesifikasiproduk, 30)
 
         # cek udah ada id google ads campaign belum
         if (product.get("acf")['google_ads_campaign_id'] and
@@ -1461,8 +1667,8 @@ def semua():
             id_ad = str(product.get("acf")['google_ads_ad_id'])
 
             print(f'-Sudah ada campaign id, adgroup id, can ad id. Akan update produk di Campaign ID {id_kampanye}, Adgroup ID {id_adgroup}, dan Ad ID {id_ad}')
-            python_update_ad_googleads(google_ads_customer_id, id_ad)
-            python_update_keyword_googleads(google_ads_customer_id, id_adgroup, merekproduk, namaproduk, spesifikasiproduk)
+            python_update_ad_googleads(google_ads_customer_id, id_ad, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, lokasitoko)
+            python_update_keyword_googleads(google_ads_customer_id, id_adgroup, merekproduk_cut, namaproduk_cut, spesifikasiproduk_cut)
         else:
             #buat POST ke google ads untuk bikin campaign baru
             print('-Campaign id, adgroup id, atau ad id belum ada. Akan buat campaign baru untuk produk ID '+str(product.get("acf")['single_item_id']))
@@ -1472,7 +1678,7 @@ def semua():
 
                 print(f"urltarget adalah {urltarget}")
                 print(f"mulai bikin campaign dengan nama produk {namaproduk}")
-                response_bikin_campaign_googleads = python_bikin_campaign_googleads(google_ads_customer_id, merekproduk_cut, namaproduk_cut, spesifikasiproduk_cut, urltarget, durasihari, budgetcampaign, lokasitoko)
+                response_bikin_campaign_googleads = python_bikin_campaign_googleads(google_ads_customer_id, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, urltarget, durasihari, budgetcampaign, lokasitoko)
 
 
                 print(f"response_bikin_campaign_googleads adalah {response_bikin_campaign_googleads}")
