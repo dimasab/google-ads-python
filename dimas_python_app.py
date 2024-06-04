@@ -13,8 +13,6 @@ from modul_hapus_campaign_googleads import fungsi_hapus_campaign_googleads
 from modul_update_ad_googleads import fungsi_update_ad_googleads
 from modul_update_keyword_googleads import fungsi_update_keyword_googleads
 from modul_update_locations_googleads import fungsi_update_locations_googleads
-from modul_cut_string import fungsi_cut_string
-
 
 
 
@@ -84,10 +82,6 @@ def semua():
         durasihari = durasibulan*31
         budgetcampaign = product.get('acf')['budget_campaign']
 
-        merekproduk_cut = fungsi_cut_string(merekproduk, 30)
-        namaproduk_cut = fungsi_cut_string(namaproduk, 30)
-        spesifikasiproduk_cut = fungsi_cut_string(spesifikasiproduk, 30)
-
         # cek udah ada id google ads campaign belum
         if (product.get("acf")['google_ads_campaign_id'] and
             product.get("acf")['google_ads_adgroup_id'] and
@@ -100,7 +94,7 @@ def semua():
 
             print(f'-Sudah ada campaign id, adgroup id, can ad id. Akan update produk di Campaign ID {id_kampanye}, Adgroup ID {id_adgroup}, dan Ad ID {id_ad}')
             fungsi_update_ad_googleads(google_ads_customer_id, id_ad, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, lokasitoko, urltarget)
-            fungsi_update_keyword_googleads(google_ads_customer_id, id_adgroup, merekproduk_cut, namaproduk_cut, spesifikasiproduk_cut)
+            fungsi_update_keyword_googleads(google_ads_customer_id, id_adgroup, merekproduk, namaproduk, spesifikasiproduk)
             fungsi_update_locations_googleads(google_ads_customer_id, id_kampanye, lokasitoko)
         else:
             #buat POST ke google ads untuk bikin campaign baru
