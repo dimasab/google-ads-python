@@ -12,6 +12,10 @@ def fungsi_update_keyword_googleads(google_ads_customer_id, id_adgroup, merekpro
 
     print("/python_update_keyword_googleads terpanggil")
 
+    merekproduk_cut = fungsi_cut_string(merekproduk, 30)
+    namaproduk_cut = fungsi_cut_string(namaproduk, 30)
+    spesifikasiproduk_cut = fungsi_cut_string(spesifikasiproduk, 30)
+
     def fetch_existing_keywords(client, customer_id, ad_group_resource_name):
         """Fetches existing keywords in an ad group."""
         ga_service = client.get_service("GoogleAdsService")
@@ -132,19 +136,19 @@ def fungsi_update_keyword_googleads(google_ads_customer_id, id_adgroup, merekpro
 
             # Add new keywords, potong dulu jadi max 80 karakter, lalu potong jadi max 10 kata sesuai aturan google
             new_keywords_broad = [
-                    fungsi_cut_to_words(fungsi_cut_string(merekproduk+" "+namaproduk+" "+spesifikasiproduk, 80) , 10),
+                    fungsi_cut_to_words(fungsi_cut_string(merekproduk_cut+" "+namaproduk_cut+" "+spesifikasiproduk_cut, 80) , 10),
                 ]
             new_keywords_phrase = [
-                    fungsi_cut_to_words(fungsi_cut_string(merekproduk+" "+namaproduk+" "+spesifikasiproduk, 80), 10),
-                    fungsi_cut_to_words(fungsi_cut_string(merekproduk+" "+namaproduk, 80), 10),
-                    fungsi_cut_to_words(fungsi_cut_string(merekproduk+" "+spesifikasiproduk, 80), 10),
-                    fungsi_cut_to_words(fungsi_cut_string(merekproduk+" "+spesifikasiproduk, 80), 10)
+                    fungsi_cut_to_words(fungsi_cut_string(merekproduk_cut+" "+namaproduk_cut+" "+spesifikasiproduk_cut, 80), 10),
+                    fungsi_cut_to_words(fungsi_cut_string(merekproduk_cut+" "+namaproduk_cut, 80), 10),
+                    fungsi_cut_to_words(fungsi_cut_string(merekproduk_cut+" "+spesifikasiproduk_cut, 80), 10),
+                    fungsi_cut_to_words(fungsi_cut_string(merekproduk_cut+" "+spesifikasiproduk_cut, 80), 10)
                 ]
             new_keywords_exact = [
-                    fungsi_cut_to_words(fungsi_cut_string(merekproduk+" "+namaproduk+" "+spesifikasiproduk, 80), 10),
-                    fungsi_cut_to_words(fungsi_cut_string(merekproduk+" "+namaproduk, 80), 10),
-                    fungsi_cut_to_words(fungsi_cut_string(merekproduk+" "+spesifikasiproduk, 80), 10),
-                    fungsi_cut_to_words(fungsi_cut_string(namaproduk+" "+spesifikasiproduk, 80), 10)  
+                    fungsi_cut_to_words(fungsi_cut_string(merekproduk_cut+" "+namaproduk_cut+" "+spesifikasiproduk_cut, 80), 10),
+                    fungsi_cut_to_words(fungsi_cut_string(merekproduk_cut+" "+namaproduk_cut, 80), 10),
+                    fungsi_cut_to_words(fungsi_cut_string(merekproduk_cut+" "+spesifikasiproduk_cut, 80), 10),
+                    fungsi_cut_to_words(fungsi_cut_string(namaproduk_cut+" "+spesifikasiproduk_cut, 80), 10)  
                 ]
             
             add_keywords(client, customer_id, ad_group_resource_name, new_keywords_broad, new_keywords_phrase, new_keywords_exact)
