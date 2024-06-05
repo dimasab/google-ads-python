@@ -94,7 +94,7 @@ def semua():
 
             print(f'-Sudah ada campaign id, adgroup id, can ad id. Akan update produk di Campaign ID {id_kampanye}, Adgroup ID {id_adgroup}, dan Ad ID {id_ad}')
             fungsi_update_ad_googleads(google_ads_customer_id, id_ad, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, lokasitoko, urltarget)
-            fungsi_update_keyword_googleads(google_ads_customer_id, id_adgroup, merekproduk, namaproduk, spesifikasiproduk)
+            fungsi_update_keyword_googleads(google_ads_customer_id, id_adgroup, jenisproduk, merekproduk, namaproduk, spesifikasiproduk)
             fungsi_update_locations_googleads(google_ads_customer_id, id_kampanye, lokasitoko)
         else:
             #buat POST ke google ads untuk bikin campaign baru
