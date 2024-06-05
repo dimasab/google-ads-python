@@ -110,10 +110,8 @@ def semua():
 
                 print(f"response_bikin_campaign_googleads adalah {response_bikin_campaign_googleads}")
 
-
-                array_bikin_campaign_googleads.append(response_bikin_campaign_googleads)
-
                 if response_bikin_campaign_googleads:
+                    array_bikin_campaign_googleads.append(response_bikin_campaign_googleads)
                     try:
                         id_post_produk = product['id']
 
