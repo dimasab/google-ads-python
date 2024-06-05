@@ -1,20 +1,20 @@
 from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
-from modul_cut_to_words import fungsi_cut_to_words
-from modul_cut_string import fungsi_cut_string
+from modul_potong_kata import fungsi_potong_kata
+from modul_potong_huruf import fungsi_potong_huruf
 ###########################################################################################################################
 ###########################################################################################################################
 ###########################################################################################################################
 ###########################################################################################################################
 ###########################################################################################################################
 ######################################################## MULAI APP ########################################################
-def fungsi_update_keyword_googleads(google_ads_customer_id, id_adgroup, merekproduk, namaproduk, spesifikasiproduk):
+def fungsi_update_keyword_googleads(google_ads_customer_id, id_adgroup, jenisproduk, merekproduk, namaproduk, spesifikasiproduk):
 
     print("/python_update_keyword_googleads terpanggil")
 
-    merekproduk_cut = fungsi_cut_string(merekproduk, 30)
-    namaproduk_cut = fungsi_cut_string(namaproduk, 30)
-    spesifikasiproduk_cut = fungsi_cut_string(spesifikasiproduk, 30)
+    merekproduk_cut = fungsi_potong_huruf(merekproduk, 30)
+    namaproduk_cut = fungsi_potong_huruf(namaproduk, 30)
+    spesifikasiproduk_cut = fungsi_potong_huruf(spesifikasiproduk, 30)
 
     def fetch_existing_keywords(client, customer_id, ad_group_resource_name):
         """Fetches existing keywords in an ad group."""
@@ -136,22 +136,35 @@ def fungsi_update_keyword_googleads(google_ads_customer_id, id_adgroup, merekpro
 
             # Add new keywords, potong dulu jadi max 80 karakter, lalu potong jadi max 10 kata sesuai aturan google
             new_keywords_broad = [
-                    fungsi_cut_to_words(fungsi_cut_string(merekproduk_cut+" "+namaproduk_cut+" "+spesifikasiproduk_cut, 80) , 10),
+                    fungsi_potong_kata(fungsi_potong_huruf(merekproduk_cut+" "+namaproduk_cut+" "+spesifikasiproduk_cut, 80) , 10),
                 ]
             new_keywords_phrase = [
-                    fungsi_cut_to_words(fungsi_cut_string(merekproduk_cut+" "+namaproduk_cut+" "+spesifikasiproduk_cut, 80), 10),
-                    fungsi_cut_to_words(fungsi_cut_string(merekproduk_cut+" "+namaproduk_cut, 80), 10),
-                    fungsi_cut_to_words(fungsi_cut_string(merekproduk_cut+" "+spesifikasiproduk_cut, 80), 10),
-                    fungsi_cut_to_words(fungsi_cut_string(merekproduk_cut+" "+spesifikasiproduk_cut, 80), 10)
+                    fungsi_potong_kata(fungsi_potong_huruf(merekproduk_cut+" "+namaproduk_cut+" "+spesifikasiproduk_cut, 80), 10),
+                    fungsi_potong_kata(fungsi_potong_huruf(merekproduk_cut+" "+namaproduk_cut, 80), 10),
+                    fungsi_potong_kata(fungsi_potong_huruf(merekproduk_cut+" "+spesifikasiproduk_cut, 80), 10),
+                    fungsi_potong_kata(fungsi_potong_huruf(merekproduk_cut+" "+spesifikasiproduk_cut, 80), 10)
                 ]
             new_keywords_exact = [
-                    fungsi_cut_to_words(fungsi_cut_string(merekproduk_cut+" "+namaproduk_cut+" "+spesifikasiproduk_cut, 80), 10),
-                    fungsi_cut_to_words(fungsi_cut_string(merekproduk_cut+" "+namaproduk_cut, 80), 10),
-                    fungsi_cut_to_words(fungsi_cut_string(merekproduk_cut+" "+spesifikasiproduk_cut, 80), 10),
-                    fungsi_cut_to_words(fungsi_cut_string(namaproduk_cut+" "+spesifikasiproduk_cut, 80), 10)  
+                    fungsi_potong_kata(fungsi_potong_huruf(merekproduk_cut+" "+namaproduk_cut+" "+spesifikasiproduk_cut, 80), 10),
+                    fungsi_potong_kata(fungsi_potong_huruf(merekproduk_cut+" "+namaproduk_cut, 80), 10),
+                    fungsi_potong_kata(fungsi_potong_huruf(merekproduk_cut+" "+spesifikasiproduk_cut, 80), 10),
+                    fungsi_potong_kata(fungsi_potong_huruf(namaproduk_cut+" "+spesifikasiproduk_cut, 80), 10)  
                 ]
             
-            add_keywords(client, customer_id, ad_group_resource_name, new_keywords_broad, new_keywords_phrase, new_keywords_exact)
+            try:
+                add_keywords(client, customer_id, ad_group_resource_name, new_keywords_broad, new_keywords_phrase, new_keywords_exact)
+            except:
+                # Kalau gagal, pakai keyword fallback
+                new_keywords_broad_fallback = [
+                    fungsi_potong_kata(fungsi_potong_huruf(jenisproduk+" "+merekproduk, 80) , 10),
+                ]
+                new_keywords_phrase_fallback = [
+                    fungsi_potong_kata(fungsi_potong_huruf(jenisproduk+" "+merekproduk, 80) , 10),
+                ]
+                new_keywords_exact_fallback = [
+                    fungsi_potong_kata(fungsi_potong_huruf(jenisproduk+" "+merekproduk, 80) , 10),
+                ]
+                add_keywords(client, customer_id, ad_group_resource_name, new_keywords_broad_fallback, new_keywords_phrase_fallback, new_keywords_exact_fallback)
 
         except GoogleAdsException as ex:
             print(f"Request with ID '{ex.request_id}' failed with status '{ex.error.code().name}' and includes the following errors:")
