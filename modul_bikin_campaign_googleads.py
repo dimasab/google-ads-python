@@ -3,8 +3,8 @@ from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 import uuid
 import datetime
-from modul_cut_to_words import fungsi_cut_to_words
-from modul_cut_string import fungsi_cut_string
+from modul_potong_kata import fungsi_potong_kata
+from modul_potong_huruf import fungsi_potong_huruf
 
 ###########################################################################################################################
 ###########################################################################################################################
@@ -20,22 +20,55 @@ def fungsi_bikin_campaign_googleads(google_ads_customer_id, jenisproduk, merekpr
     # campaign_baru = []
     # id_kampanye = None
 
+
+    # merekproduk_cut = fungsi_potong_huruf(merekproduk, 30)
+    # namaproduk_cut = fungsi_potong_huruf(namaproduk, 30)
+    # spesifikasiproduk_cut = fungsi_potong_huruf(spesifikasiproduk, 30)
+
+
+    # # Add new keywords, potong dulu jadi max 80 karakter, lalu potong jadi max 10 kata sesuai aturan google
+    # new_keywords_broad = [
+    #         fungsi_potong_kata(fungsi_potong_huruf(merekproduk_cut+" "+namaproduk_cut+" "+spesifikasiproduk_cut, 80) , 10),
+    #     ]
+    # new_keywords_phrase = [
+    #         fungsi_potong_kata(fungsi_potong_huruf(merekproduk_cut+" "+namaproduk_cut+" "+spesifikasiproduk_cut, 80), 10),
+    #         fungsi_potong_kata(fungsi_potong_huruf(merekproduk_cut+" "+namaproduk_cut, 80), 10),
+    #         fungsi_potong_kata(fungsi_potong_huruf(merekproduk_cut+" "+spesifikasiproduk_cut, 80), 10),
+    #         fungsi_potong_kata(fungsi_potong_huruf(merekproduk_cut+" "+spesifikasiproduk_cut, 80), 10)
+    #     ]
+    # new_keywords_exact = [
+    #         fungsi_potong_kata(fungsi_potong_huruf(merekproduk_cut+" "+namaproduk_cut+" "+spesifikasiproduk_cut, 80), 10),
+    #         fungsi_potong_kata(fungsi_potong_huruf(merekproduk_cut+" "+namaproduk_cut, 80), 10),
+    #         fungsi_potong_kata(fungsi_potong_huruf(merekproduk_cut+" "+spesifikasiproduk_cut, 80), 10),
+    #         fungsi_potong_kata(fungsi_potong_huruf(namaproduk_cut+" "+spesifikasiproduk_cut, 80), 10)  
+    #     ]
+
+
     # Add new keywords, potong dulu jadi max 80 karakter, lalu potong jadi max 10 kata sesuai aturan google
     new_keywords_broad = [
-            fungsi_cut_to_words(fungsi_cut_string(merekproduk+" "+namaproduk+" "+spesifikasiproduk, 80) , 10),
+            fungsi_potong_kata(fungsi_potong_huruf(merekproduk+" "+namaproduk+" "+spesifikasiproduk, 80) , 10),
         ]
     new_keywords_phrase = [
-            fungsi_cut_to_words(fungsi_cut_string(merekproduk+" "+namaproduk+" "+spesifikasiproduk, 80), 10),
-            fungsi_cut_to_words(fungsi_cut_string(merekproduk+" "+namaproduk, 80), 10),
-            fungsi_cut_to_words(fungsi_cut_string(merekproduk+" "+spesifikasiproduk, 80), 10),
-            fungsi_cut_to_words(fungsi_cut_string(merekproduk+" "+spesifikasiproduk, 80), 10)
+            fungsi_potong_kata(fungsi_potong_huruf(merekproduk+" "+namaproduk+" "+spesifikasiproduk, 80), 10),
+            fungsi_potong_kata(fungsi_potong_huruf(merekproduk+" "+namaproduk, 80), 10),
+            fungsi_potong_kata(fungsi_potong_huruf(merekproduk+" "+spesifikasiproduk, 80), 10),
+            fungsi_potong_kata(fungsi_potong_huruf(merekproduk+" "+spesifikasiproduk, 80), 10)
         ]
     new_keywords_exact = [
-            fungsi_cut_to_words(fungsi_cut_string(merekproduk+" "+namaproduk+" "+spesifikasiproduk, 80), 10),
-            fungsi_cut_to_words(fungsi_cut_string(merekproduk+" "+namaproduk, 80), 10),
-            fungsi_cut_to_words(fungsi_cut_string(merekproduk+" "+spesifikasiproduk, 80), 10),
-            fungsi_cut_to_words(fungsi_cut_string(namaproduk+" "+spesifikasiproduk, 80), 10)  
+            fungsi_potong_kata(fungsi_potong_huruf(merekproduk+" "+namaproduk+" "+spesifikasiproduk, 80), 10),
+            fungsi_potong_kata(fungsi_potong_huruf(merekproduk+" "+namaproduk, 80), 10),
+            fungsi_potong_kata(fungsi_potong_huruf(merekproduk+" "+spesifikasiproduk, 80), 10),
+            fungsi_potong_kata(fungsi_potong_huruf(namaproduk+" "+spesifikasiproduk, 80), 10)  
         ]
+    
+    print("new_keywords_broad")
+    print(new_keywords_broad)
+
+    print("new_keywords_phrase")
+    print(new_keywords_phrase)
+
+    print("new_keywords_exact")
+    print(new_keywords_exact)
 
     # Geo targeting from user.
     GEO_LOCATION_1 = lokasitoko
@@ -85,8 +118,20 @@ def fungsi_bikin_campaign_googleads(google_ads_customer_id, jenisproduk, merekpr
         create_ad_group_ad(
             client, customer_id, ad_group_resource_name, customizer_attribute_name, urltarget
         )
-
-        add_keywords(client, customer_id, ad_group_resource_name, new_keywords_broad, new_keywords_phrase, new_keywords_exact)
+        try:
+            add_keywords(client, customer_id, ad_group_resource_name, new_keywords_broad, new_keywords_phrase, new_keywords_exact)
+        except:
+            # Kalau gagal, pakai keyword fallback
+            new_keywords_broad_fallback = [
+                fungsi_potong_kata(fungsi_potong_huruf(jenisproduk+" "+merekproduk, 80) , 10),
+            ]
+            new_keywords_phrase_fallback = [
+                fungsi_potong_kata(fungsi_potong_huruf(jenisproduk+" "+merekproduk, 80) , 10),
+            ]
+            new_keywords_exact_fallback = [
+                fungsi_potong_kata(fungsi_potong_huruf(jenisproduk+" "+merekproduk, 80) , 10),
+            ]
+            add_keywords(client, customer_id, ad_group_resource_name, new_keywords_broad_fallback, new_keywords_phrase_fallback, new_keywords_exact_fallback)
 
         add_geo_targeting(client, customer_id, campaign_resource_name)
 
@@ -390,7 +435,7 @@ def fungsi_bikin_campaign_googleads(google_ads_customer_id, jenisproduk, merekpr
             served_asset_enum = client.enums.ServedAssetFieldTypeEnum.HEADLINE_1
             pinned_headline = create_ad_text_asset(
                 client, 
-                fungsi_cut_string(jenisproduk.capitalize()+" "+merekproduk.capitalize(), 30), 
+                fungsi_potong_huruf(jenisproduk.capitalize()+" "+merekproduk.capitalize(), 30), 
                 served_asset_enum
             )
 
@@ -398,9 +443,9 @@ def fungsi_bikin_campaign_googleads(google_ads_customer_id, jenisproduk, merekpr
             ad_group_ad.ad.responsive_search_ad.headlines.extend(
                 [
                     pinned_headline,
-                    create_ad_text_asset(client, fungsi_cut_string(namaproduk.capitalize(), 30)),
-                    create_ad_text_asset(client, fungsi_cut_string(spesifikasiproduk.capitalize(), 30)),
-                    create_ad_text_asset(client, fungsi_cut_string(hargaproduk_dengan_rp, 30)),
+                    create_ad_text_asset(client, fungsi_potong_huruf(namaproduk.capitalize(), 30)),
+                    create_ad_text_asset(client, fungsi_potong_huruf(spesifikasiproduk.capitalize(), 30)),
+                    create_ad_text_asset(client, fungsi_potong_huruf(hargaproduk_dengan_rp, 30)),
                 ]
             )
         else:
@@ -409,7 +454,7 @@ def fungsi_bikin_campaign_googleads(google_ads_customer_id, jenisproduk, merekpr
             served_asset_enum = client.enums.ServedAssetFieldTypeEnum.HEADLINE_1
             pinned_headline = create_ad_text_asset(
                 client, 
-                fungsi_cut_string(merekproduk.capitalize()+" "+namaproduk.capitalize(), 30), 
+                fungsi_potong_huruf(merekproduk.capitalize()+" "+namaproduk.capitalize(), 30), 
                 served_asset_enum
             )
 
@@ -417,14 +462,14 @@ def fungsi_bikin_campaign_googleads(google_ads_customer_id, jenisproduk, merekpr
             ad_group_ad.ad.responsive_search_ad.headlines.extend(
                 [
                     pinned_headline,
-                    create_ad_text_asset(client, fungsi_cut_string(spesifikasiproduk.capitalize(), 30)),
-                    create_ad_text_asset(client, fungsi_cut_string(hargaproduk_dengan_rp, 30)),
+                    create_ad_text_asset(client, fungsi_potong_huruf(spesifikasiproduk.capitalize(), 30)),
+                    create_ad_text_asset(client, fungsi_potong_huruf(hargaproduk_dengan_rp, 30)),
                 ]
             )
 
-        deskripsi_1 = fungsi_cut_string("Jual "+jenisproduk+" "+merekproduk.capitalize()+" "+namaproduk+" di "+lokasitoko.replace("_", " "), 90)
-        deskripsi_2 = fungsi_cut_string(spesifikasiproduk, 90)
-        deskripsi_3 = fungsi_cut_string("Mulai dari "+hargaproduk_dengan_rp, 90)
+        deskripsi_1 = fungsi_potong_huruf("Jual "+jenisproduk+" "+merekproduk.capitalize()+" "+namaproduk+" di "+lokasitoko.replace("_", " "), 90)
+        deskripsi_2 = fungsi_potong_huruf(spesifikasiproduk, 90)
+        deskripsi_3 = fungsi_potong_huruf("Mulai dari "+hargaproduk_dengan_rp, 90)
 
         # Description 1 and 2
         description_1 = create_ad_text_asset(client, deskripsi_1)
