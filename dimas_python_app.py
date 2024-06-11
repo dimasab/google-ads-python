@@ -6,13 +6,14 @@ load_dotenv()   # take environment variables from .env.
 app = Flask(__name__)
 
 from modul_cek_produk_seller import fungsi_cek_produk_seller
-from modul_bikin_campaign_googleads import fungsi_bikin_campaign_googleads
+from modul_bikin_iklan_lengkap import fungsi_bikin_iklan_lengkap
 from modul_pasang_campaign_id_ke_acf import fungsi_pasang_campaign_id_ke_acf
 from modul_cek_produk_spesifik_ads_ruanglaptop import fungsi_cek_produk_spesifik_ads_ruanglaptop
 from modul_hapus_campaign_googleads import fungsi_hapus_campaign_googleads
 from modul_update_ad_googleads import fungsi_update_ad_googleads
 from modul_update_keyword_googleads import fungsi_update_keyword_googleads
 from modul_update_locations_googleads import fungsi_update_locations_googleads
+from modul_report_metrik_campaign import fungsi_report_metrik_campaign
 
 
 
@@ -48,14 +49,19 @@ from modul_update_locations_googleads import fungsi_update_locations_googleads
 ###########################################################################################################################
 ###########################################################################################################################
 ######################################################## MULAI APP ########################################################
-@app.route('/semua', methods=['GET'])
-def semua():
-    print("/semua terpanggil")
+@app.route('/refresh', methods=['GET'])
+def refresh():
+    print("/refresh terpanggil")
     
     if not request.headers.get(os.environ['vler']):
         return Response(status=401)
     elif request.headers[os.environ['vler']] != os.environ['biji']:
         return Response(status=401)
+    
+    if request.args.get('produk'):
+        produk = request.args.get('produk')
+    else:
+        produk = None
     
     array_produk_seller = []
     array_bikin_campaign_googleads = []
@@ -63,7 +69,10 @@ def semua():
     
     # Call the first app to get array from seller products
     try:
-        array_produk_seller = fungsi_cek_produk_seller()
+        if produk != "semua":
+            array_produk_seller = fungsi_cek_produk_spesifik_ads_ruanglaptop(id_post_produk=produk)
+        elif produk == "semua":
+            array_produk_seller = fungsi_cek_produk_seller()
     except Exception as e:
         app.logger.error(f"An error occurred while calling python_cek_produk_seller app: {e}")
 
@@ -93,8 +102,8 @@ def semua():
             id_ad = str(product.get("acf")['google_ads_ad_id'])
 
             print(f'-Sudah ada campaign id, adgroup id, can ad id. Akan update produk di Campaign ID {id_kampanye}, Adgroup ID {id_adgroup}, dan Ad ID {id_ad}')
-            fungsi_update_ad_googleads(google_ads_customer_id, id_ad, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, lokasitoko, urltarget)
-            fungsi_update_keyword_googleads(google_ads_customer_id, id_adgroup, jenisproduk, merekproduk, namaproduk, spesifikasiproduk)
+            fungsi_update_ad_googleads(google_ads_customer_id, id_ad, urltarget, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, lokasitoko)
+            fungsi_update_keyword_googleads(google_ads_customer_id, id_adgroup, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, urltarget)
             fungsi_update_locations_googleads(google_ads_customer_id, id_kampanye, lokasitoko)
         else:
             #buat POST ke google ads untuk bikin campaign baru
@@ -105,7 +114,7 @@ def semua():
 
                 print(f"urltarget adalah {urltarget}")
                 print(f"mulai bikin campaign dengan nama produk {namaproduk}")
-                response_bikin_campaign_googleads = fungsi_bikin_campaign_googleads(google_ads_customer_id, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, urltarget, durasihari, budgetcampaign, lokasitoko)
+                response_bikin_campaign_googleads = fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, urltarget, durasihari, budgetcampaign, lokasitoko)
 
 
                 print(f"response_bikin_campaign_googleads adalah {response_bikin_campaign_googleads}")
@@ -180,6 +189,145 @@ def semua():
 
 
 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+######################################################## MULAI APP ########################################################
+@app.route('/report_campaign', methods=['GET'])
+def report_campaign():
+
+    if not request.headers.get(os.environ['vler']):
+        return Response(status=401)
+    elif request.headers[os.environ['vler']] != os.environ['biji']:
+        return Response(status=401)
+
+    print("mulai /report_campaign")
+
+    hasil = fungsi_report_metrik_campaign()
+
+    return Response(hasil)
+######################################################## SELESAI APP ########################################################
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+######################################################## MULAI APP ########################################################
+import requests
+@app.route('/update_total_klik', methods=['GET'])
+def update_total_klik():
+    print("/update_total_klik terpanggil")
+
+    if not request.headers.get(os.environ['vler']):
+        return Response(status=401)
+    elif request.headers[os.environ['vler']] != os.environ['biji']:
+        return Response(status=401)
+
+    hasil_cek_produk_seller = fungsi_cek_produk_seller()
+    hasil_report_metrik_campaign = fungsi_report_metrik_campaign()
+
+    for campaign in hasil_report_metrik_campaign:
+        campaign_id_di_report_googleads = campaign.get('campaign_id')
+        total_clicks_di_report_googleads = campaign.get('total_clicks')
+        for produk in hasil_cek_produk_seller:
+            campaign_id_di_produk_seller = produk.get("acf")["google_ads_campaign_id"]
+            post_id_di_produk_seller = produk.get("id")
+            if campaign_id_di_report_googleads == campaign_id_di_produk_seller:
+                print(f"post id {post_id_di_produk_seller} dengan campaign_id_di_produk_seller {campaign_id_di_produk_seller} cocok dengan campaign_id_di_report_googleads {campaign_id_di_report_googleads}, kliknya {total_clicks_di_report_googleads}")
+                data_acf = produk.get("acf").copy() #copy data acf produk, dan pasang ke variabel data_acf untuk di POST nanti
+                data_acf['total_klik'] = str(total_clicks_di_report_googleads)  #pasang ad id yang baru terbuat ke data_acf
+                # print(data_acf)
+
+                try:
+                    products_offers_endpoint = f"https://ads.ruanglaptop.com/wp-json/wp/v2/produk_saya/{post_id_di_produk_seller}"
+                    headers = {'Authorization': 'Bearer {}'.format(os.getenv('json_web_token'))}
+                    body = {
+                        'acf': data_acf
+                    }
+                    response = requests.post(
+                        url = products_offers_endpoint,
+                        headers = headers,
+                        json = body
+                    )
+                    print(Response(response.content, content_type='application/json', status=response.status_code))
+                except Exception as e:
+                    print(f"An error occurred: {e}")
+                    return {"error": "An error occurred while processing your request."}
+
+
+    return hasil_cek_produk_seller
+######################################################## SELESAI APP ########################################################
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
+###########################################################################################################################
 
 
 
