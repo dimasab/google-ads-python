@@ -1,34 +1,18 @@
-import requests
-import os
-from dotenv import load_dotenv
-load_dotenv()   # take environment variables from .env.
 ###########################################################################################################################
 ###########################################################################################################################
 ###########################################################################################################################
 ###########################################################################################################################
 ###########################################################################################################################
 ######################################################## MULAI APP ########################################################
-def fungsi_cek_produk_spesifik_ads_ruanglaptop(id_post_produk):
-    print("/python_cek_produk_spesifik_ads_ruanglaptop terpanggil")
-
-    array_single_item = []
-
-    products_offers_endpoint = f"https://ads.ruanglaptop.com/wp-json/wp/v2/produk_saya/{id_post_produk}"
-    headers = {'Authorization': 'Bearer {}'.format(os.getenv('json_web_token'))}
-
+def fungsi_potong_kata(input_str, max_words=10):
     if __name__ == "__main__":
         print("Tidak boleh dipanggil langsung")
     else:
-        try:
-            response = requests.get(
-                url = products_offers_endpoint,
-                headers = headers
-            )
-            array_single_item.append(response.json())
-            return array_single_item
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            return {"error": "An error occurred while processing your request."}
+        words = input_str.split()
+        if len(words) <= max_words:
+            return input_str
+        # Join the first max_words words into a new string
+        return ' '.join(words[:max_words])
 ######################################################## SELESAI APP ########################################################
 ###########################################################################################################################
 ###########################################################################################################################

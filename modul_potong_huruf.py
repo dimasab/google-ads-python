@@ -1,34 +1,21 @@
-import requests
-import os
-from dotenv import load_dotenv
-load_dotenv()   # take environment variables from .env.
 ###########################################################################################################################
 ###########################################################################################################################
 ###########################################################################################################################
 ###########################################################################################################################
 ###########################################################################################################################
 ######################################################## MULAI APP ########################################################
-def fungsi_cek_produk_spesifik_ads_ruanglaptop(id_post_produk):
-    print("/python_cek_produk_spesifik_ads_ruanglaptop terpanggil")
-
-    array_single_item = []
-
-    products_offers_endpoint = f"https://ads.ruanglaptop.com/wp-json/wp/v2/produk_saya/{id_post_produk}"
-    headers = {'Authorization': 'Bearer {}'.format(os.getenv('json_web_token'))}
-
+def fungsi_potong_huruf(input_str, max_length=30):
     if __name__ == "__main__":
         print("Tidak boleh dipanggil langsung")
     else:
-        try:
-            response = requests.get(
-                url = products_offers_endpoint,
-                headers = headers
-            )
-            array_single_item.append(response.json())
-            return array_single_item
-        except Exception as e:
-            print(f"An error occurred: {e}")
-            return {"error": "An error occurred while processing your request."}
+        if len(input_str) <= max_length:
+            return input_str
+        # Find the last space before the max_length mark
+        cut_index = input_str.rfind(' ', 0, max_length)
+        if cut_index == -1:
+            # If there is no space, cut at the max_length
+            cut_index = max_length
+        return input_str[:cut_index]
 ######################################################## SELESAI APP ########################################################
 ###########################################################################################################################
 ###########################################################################################################################

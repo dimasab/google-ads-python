@@ -1,5 +1,6 @@
 from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
+from modul_bikin_lokasi import fungsi_bikin_lokasi
 ###########################################################################################################################
 ###########################################################################################################################
 ###########################################################################################################################
@@ -61,69 +62,6 @@ def fungsi_update_locations_googleads(google_ads_customer_id, id_kampanye, lokas
         for result in response.results:
             print(f"Removed location {result.resource_name}.")
 
-    def pasang_lokasi_baru(client, customer_id, campaign_resource_name):
-        """Creates geo targets.
-
-        Args:
-        client: an initialized GoogleAdsClient instance.
-        customer_id: a client customer ID.
-        campaign_resource_name: an campaign resource name.
-
-        Returns:
-        Geo targets.
-        """
-        geo_target_constant_service = client.get_service("GeoTargetConstantService")
-
-        # Search by location names from
-        # GeoTargetConstantService.suggest_geo_target_constants() and directly
-        # apply GeoTargetConstant.resource_name.
-        gtc_request = client.get_type("SuggestGeoTargetConstantsRequest")
-        gtc_request.locale = LOCALE
-        gtc_request.country_code = COUNTRY_CODE
-
-        # The location names to get suggested geo target constants.
-        gtc_request.location_names.names.extend(
-            [
-             GEO_LOCATION_1, 
-            #  GEO_LOCATION_2, 
-            #  GEO_LOCATION_3
-             ]
-        )
-
-        results = geo_target_constant_service.suggest_geo_target_constants(
-            gtc_request
-        )
-
-        operations = []
-        for suggestion in results.geo_target_constant_suggestions:
-            print(
-                "geo_target_constant: "
-                f"{suggestion.geo_target_constant.resource_name} "
-                f"is found in LOCALE ({suggestion.locale}) "
-                f"with reach ({suggestion.reach}) "
-                f"from search term ({suggestion.search_term})."
-            )
-            # Create the campaign criterion for location targeting.
-            campaign_criterion_operation = client.get_type(
-                "CampaignCriterionOperation"
-            )
-            campaign_criterion = campaign_criterion_operation.create
-            campaign_criterion.campaign = campaign_resource_name
-            campaign_criterion.location.geo_target_constant = (
-                suggestion.geo_target_constant.resource_name
-            )
-            operations.append(campaign_criterion_operation)
-
-        campaign_criterion_service = client.get_service("CampaignCriterionService")
-        campaign_criterion_response = (
-            campaign_criterion_service.mutate_campaign_criteria(
-                customer_id=customer_id, operations=[*operations]
-            )
-        )
-
-        for result in campaign_criterion_response.results:
-            print(f'Added campaign criterion "{result.resource_name}".')
-
     def main(client, customer_id, campaign_resource_name):
         try:
             # update_geo_targeting(client, customer_id, campaign_resource_name, lokasitoko)
@@ -135,7 +73,7 @@ def fungsi_update_locations_googleads(google_ads_customer_id, id_kampanye, lokas
             if existing_locations:
                 hapus_lokasi_sekarang(client, customer_id, existing_locations)
 
-            pasang_lokasi_baru(client, customer_id, campaign_resource_name)
+            fungsi_bikin_lokasi(client, customer_id, campaign_resource_name, LOCALE, COUNTRY_CODE, GEO_LOCATION_1)
 
         except GoogleAdsException as ex:
             print(f"Request with ID '{ex.request_id}' failed with status '{ex.error.code().name}' and includes the following errors:")

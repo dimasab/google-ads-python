@@ -14,6 +14,7 @@ from modul_update_ad_googleads import fungsi_update_ad_googleads
 from modul_update_keyword_googleads import fungsi_update_keyword_googleads
 from modul_update_locations_googleads import fungsi_update_locations_googleads
 from modul_report_metrik_campaign import fungsi_report_metrik_campaign
+from modul_update_status_kampanye import fungsi_update_status_kampanye
 
 
 
@@ -77,7 +78,6 @@ def refresh():
         app.logger.error(f"An error occurred while calling python_cek_produk_seller app: {e}")
 
     for product in array_produk_seller:
-        print('untuk produk_saya ID '+str(product['id'])+', ID campaign google ads nya adalah '+str(product.get("acf")['google_ads_campaign_id']))
 
         jenisproduk = product.get('acf')['jenis_produk']
         merekproduk = product.get('acf')['merek_produk']
@@ -89,84 +89,74 @@ def refresh():
         urltarget = product.get('acf')[f'url_{targetklik}']
         durasibulan = product.get('acf')['durasi_listing_bulan']
         durasihari = durasibulan*31
-        budgetcampaign = product.get('acf')['budget_campaign']
+        budgetcampaignperbulan = product.get('acf')['budget_campaign_perbulan']
+        statusaktif = product.get('acf')['status_aktif']
+        statusaktifdariseller = product.get('acf')['status_aktif_dari_seller']
+        bahasa = "id"
+        negara = "ID"
 
-        # cek udah ada id google ads campaign belum
+        # Mulai cek sudah ada iklan atau belum
+
         if (product.get("acf")['google_ads_campaign_id'] and
             product.get("acf")['google_ads_adgroup_id'] and
             product.get("acf")['google_ads_ad_id']):
 
-            #cek apa id campaign nya, dan bikin POST untuk update
+            #Kalau sudah ada iklan
+
             id_kampanye = str(product.get("acf")['google_ads_campaign_id'])
             id_adgroup = str(product.get("acf")['google_ads_adgroup_id'])
             id_ad = str(product.get("acf")['google_ads_ad_id'])
 
-            print(f'-Sudah ada campaign id, adgroup id, can ad id. Akan update produk di Campaign ID {id_kampanye}, Adgroup ID {id_adgroup}, dan Ad ID {id_ad}')
+            print(f'Sudah ada iklan untuk acf single_item_id {str(product.get("acf")['single_item_id'])}. Akan update iklan dengan Campaign ID {id_kampanye}, Adgroup ID {id_adgroup}, dan Ad ID {id_ad}')
+
+            fungsi_update_status_kampanye(google_ads_customer_id, id_kampanye, statusaktif, statusaktifdariseller)
             fungsi_update_ad_googleads(google_ads_customer_id, id_ad, urltarget, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, lokasitoko)
             fungsi_update_keyword_googleads(google_ads_customer_id, id_adgroup, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, urltarget)
             fungsi_update_locations_googleads(google_ads_customer_id, id_kampanye, lokasitoko)
         else:
-            #buat POST ke google ads untuk bikin campaign baru
-            print('-Campaign id, adgroup id, atau ad id belum ada. Akan buat campaign baru untuk produk ID '+str(product.get("acf")['single_item_id']))
-            # Call the third app to create products
+            #Kalau belum ada iklan
+            print(f'Belum ada iklan untuk acf single_item_id {str(product.get("acf")['single_item_id'])}. Akan buat iklan baru')
             try:
-                # response_bikin_campaign_googleads = requests.get("http://localhost:5001/python-bikin-campaign-googleads")
-
-                print(f"urltarget adalah {urltarget}")
-                print(f"mulai bikin campaign dengan nama produk {namaproduk}")
-                response_bikin_campaign_googleads = fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, urltarget, durasihari, budgetcampaign, lokasitoko)
-
-
-                print(f"response_bikin_campaign_googleads adalah {response_bikin_campaign_googleads}")
-
+                response_bikin_campaign_googleads = fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, urltarget, durasihari, budgetcampaignperbulan, lokasitoko, bahasa, negara)
                 if response_bikin_campaign_googleads:
+                    print(f"Berhasil membuat iklan (belum diaktifkan). Akan update data acf produk")
                     array_bikin_campaign_googleads.append(response_bikin_campaign_googleads)
                     try:
                         id_post_produk = product['id']
-
                         data_acf = product.get("acf").copy() #copy data acf produk, dan pasang ke variabel data_acf untuk di POST nanti
                         data_acf['google_ads_campaign_id'] = str(response_bikin_campaign_googleads["id_kampanye"]) #pasang campaign id yang baru terbuat ke data_acf
                         data_acf['google_ads_adgroup_id'] = str(response_bikin_campaign_googleads["id_adgroup"])  #pasang adgroup id yang baru terbuat ke data acf
                         data_acf['google_ads_ad_id'] = str(response_bikin_campaign_googleads["id_ad"])  #pasang ad id yang baru terbuat ke data_acf
-
-                        print(f'Post ke produk_saya ID {id_post_produk} untuk campagin ID {data_acf['google_ads_campaign_id']}')
                         try:
                             fungsi_pasang_campaign_id_ke_acf(id_post_produk, data_acf) #update produk di ads.ruanglaptop.com dengan data_acf yang sudah terisi campaign id, adgroup id, dan ad id
                             produkbaru = fungsi_cek_produk_spesifik_ads_ruanglaptop(id_post_produk) #baca produk yang barusan diupdate
-
+                            produkbaru = produkbaru[0]
                             campaign_id_di_produk = produkbaru.get("acf")['google_ads_campaign_id'] #baca campaign id di produk yang sudah terupdate tadi
                             adgroup_id_di_produk = produkbaru.get("acf")['google_ads_adgroup_id'] #baca adgroup id di produk yang sudah terupdate tadi
                             ad_id_di_produk = produkbaru.get("acf")['google_ads_ad_id'] #baca ad id di produk yang sudah terupdate tadi
-
-                            print(f"campaign id yang akan dipasang ke produk adalah {data_acf['google_ads_campaign_id']}")
-                            print(f"campaign id yang sudah terpasang di produk adalah {campaign_id_di_produk}")
-
-                            print(f"adgroup id yang akan dipasang ke produk adalah {data_acf['google_ads_adgroup_id']}")
-                            print(f"adgroup id yang sudah terpasang di produk adalah {adgroup_id_di_produk}")
-
-                            print(f"ad id yang akan dipasang ke produk adalah {data_acf['google_ads_ad_id']}")
-                            print(f"ad id yang sudah terpasang di produk adalah {ad_id_di_produk}")
-
                             if (str(campaign_id_di_produk).strip() == str(data_acf['google_ads_campaign_id']).strip() and
                                 str(adgroup_id_di_produk).strip() == str(data_acf['google_ads_adgroup_id']).strip() and
                                 str(ad_id_di_produk).strip() == str(data_acf['google_ads_ad_id']).strip()):
-
-                                print("campaign id sama, adgroup id sama, ad id sama")
+                                print("Berhasil update data acf produk")
+                                try:
+                                    id_kampanye = str(campaign_id_di_produk).strip()
+                                    fungsi_update_status_kampanye(google_ads_customer_id, id_kampanye, statusaktif, statusaktifdariseller)
+                                    print("Sukese mengaktifkan iklan")
+                                except:
+                                    print("Gagal mengaktifkan iklan")
                             else:
-                                print("ada yang tidak sama entah itu campaign id, adgroup id, atau ad id. Mulai menghapus campaign di google ads")
+                                print("Gagal update data acf produk. Akan remove campaign google ads")
                                 try:
                                     ngapus = fungsi_hapus_campaign_googleads(google_ads_customer_id, data_acf['google_ads_campaign_id'])
                                     print(ngapus)
                                 except Exception as e:
                                     print(f'An error occurred: {e}')
-
                         except Exception as e:
                             print(f'An error occurred: {e}')
                     except Exception as e:
                         print(f'An error occurred: {e}')
                 else:
-                    print("status bikin campaign tidak 200 ok")
-
+                    print(f'Gagal membuat iklan')
             except Exception as e:
                 app.logger.error(f"An error occurred while calling python_bikin_campaign_googleads app: {e}")
     
@@ -217,32 +207,6 @@ def refresh():
 
 
 
-
-###########################################################################################################################
-###########################################################################################################################
-###########################################################################################################################
-###########################################################################################################################
-###########################################################################################################################
-######################################################## MULAI APP ########################################################
-@app.route('/report_campaign', methods=['GET'])
-def report_campaign():
-
-    if not request.headers.get(os.environ['vler']):
-        return Response(status=401)
-    elif request.headers[os.environ['vler']] != os.environ['biji']:
-        return Response(status=401)
-
-    print("mulai /report_campaign")
-
-    hasil = fungsi_report_metrik_campaign()
-
-    return Response(hasil)
-######################################################## SELESAI APP ########################################################
-###########################################################################################################################
-###########################################################################################################################
-###########################################################################################################################
-###########################################################################################################################
-###########################################################################################################################
 
 
 
