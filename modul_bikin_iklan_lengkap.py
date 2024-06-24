@@ -14,7 +14,7 @@ from modul_buat_budget import fungsi_buat_budget
 ###########################################################################################################################
 ###########################################################################################################################
 ######################################################## MULAI APP ########################################################
-def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, urltarget, durasihari, budgetcampaignperbulan, lokasitoko, bahasa, negara):
+def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, urltarget, durasihari, budgetcampaignperbulan, lokasitoko, bahasa, negara, tanggalexpiry):
 #modifikasi dari add_responsive_search_ad_full
 
     print("/python-bikin-campaign-googleads terpanggil")
@@ -61,48 +61,54 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
         try:
             campaign_budget = fungsi_buat_budget(client, customer_id, budgetcampaignperbulan)
             print("fungsi_buat_budget sukses")
-        except:
+        except Exception as e:
             print("fungsi_buat_budget gagal")
+            raise e  # Raise the exception to stop further execution
 
 
 
         try:
-            campaign_resource_name = create_campaign(client, customer_id, campaign_budget, durasihari)
+            campaign_resource_name = create_campaign(client, customer_id, campaign_budget, durasihari, tanggalexpiry)
             print("create_campaign sukses")
-        except:
+        except Exception as e:
             print("create_campaign gagal")
+            raise e  # Raise the exception to stop further execution
 
 
 
         try:
             ad_group_resource_name = create_ad_group(client, customer_id, campaign_resource_name)
             print("create_ad_group sukses")
-        except:
+        except Exception as e:
             print("create_ad_group gagal")
+            raise e  # Raise the exception to stop further execution
 
 
 
         try:
             id_ad = fungsi_buat_ad(client, customer_id, ad_group_resource_name, urltarget, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, lokasitoko)
             print("fungsi_buat_ad sukses")
-        except:
+        except Exception as e:
             print("fungsi_buat_ad gagal")
+            raise e  # Raise the exception to stop further execution
 
 
 
         try:
             fungsi_buat_keyword(client, customer_id, ad_group_resource_name, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, urltarget)
             print("fungsi_buat_keyword sukses")
-        except:
+        except Exception as e:
             print("fungsi_buat_keyword gagal")
+            raise e  # Raise the exception to stop further execution
 
 
 
         try:
             fungsi_bikin_lokasi(client, customer_id, campaign_resource_name, LOCALE, COUNTRY_CODE, GEO_LOCATION_1)
             print("fungsi_bikin_lokasi sukses")
-        except:
+        except Exception as e:
             print("fungsi_bikin_lokasi gagal")
+            raise e  # Raise the exception to stop further execution
 
 
 
@@ -184,7 +190,7 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
         )
 
 
-    def create_campaign(client, customer_id, campaign_budget, durasihari):
+    def create_campaign(client, customer_id, campaign_budget, durasihari, tanggalexpiry):
         """Creates campaign resource.
 
         Args:
@@ -230,10 +236,17 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
         # # Optional: Set the start date.
         start_time = datetime.date.today() + datetime.timedelta(days=0) #formatnya jadi yyyy-mm-dd
         campaign.start_date = datetime.date.strftime(start_time, _DATE_FORMAT)
+        print(f"campaign.start_date adalah {campaign.start_date}")
+
+        # # # Optional: Set the end date.
+        # end_time = start_time + datetime.timedelta(days=durasihari)
+        # campaign.end_date = datetime.date.strftime(end_time, _DATE_FORMAT)
 
         # # Optional: Set the end date.
-        end_time = start_time + datetime.timedelta(days=durasihari)
-        campaign.end_date = datetime.date.strftime(end_time, _DATE_FORMAT)
+        tanggalexpiry_date_part = tanggalexpiry.split('T')[0]
+        tanggalexpiry_datetime = datetime.datetime.strptime(tanggalexpiry_date_part, _DATE_FORMAT)
+        campaign.end_date = datetime.date.strftime(tanggalexpiry_datetime, _DATE_FORMAT)
+        print(f"campaign.end_date adalah {campaign.end_date}")
 
         # Add the campaign.
         campaign_response = campaign_service.mutate_campaigns(
@@ -266,7 +279,7 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
 
         ad_group_operation = client.get_type("AdGroupOperation")
         ad_group = ad_group_operation.create
-        ad_group.name = f"Testing RSA via API {uuid.uuid4()}"
+        ad_group.name = f"Testing AdGroup dari API {uuid.uuid4()}"
         ad_group.status = client.enums.AdGroupStatusEnum.ENABLED
         ad_group.campaign = campaign_resource_name
         ad_group.type_ = client.enums.AdGroupTypeEnum.SEARCH_STANDARD
@@ -317,7 +330,6 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
                 if error.location:
                     for field_path_element in error.location.field_path_elements:
                         print(f"\t\tOn field: {field_path_element.field_name}")
-            sys.exit(1)
 
 ######################################################## SELESAI APP ########################################################
 ###########################################################################################################################
