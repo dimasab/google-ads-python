@@ -1,6 +1,3 @@
-
-
-
 def fungsi_bikin_lokasi(client, customer_id, campaign_resource_name, LOCALE, COUNTRY_CODE, GEO_LOCATION_1):
 
     try:

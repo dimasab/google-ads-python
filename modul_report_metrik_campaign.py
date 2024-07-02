@@ -4,9 +4,9 @@ from google.ads.googleads.client import GoogleAdsClient
 from google.ads.googleads.errors import GoogleAdsException
 
 
-def fungsi_report_metrik_campaign():
+def fungsi_report_metrik_campaign(google_ads_customer_id):
 
-    def main(client, customer_id):
+    def main(google_ads_client, google_ads_customer_id):
         campaign_query = """
         SELECT 
             campaign.id,
@@ -19,8 +19,8 @@ def fungsi_report_metrik_campaign():
         array_hasil = []
 
         try:
-            ga_service = client.get_service("GoogleAdsService")
-            response = ga_service.search_stream(customer_id=customer_id, query=campaign_query)
+            ga_service = google_ads_client.get_service("GoogleAdsService")
+            response = ga_service.search_stream(customer_id=google_ads_customer_id, query=campaign_query)
             
             for batch in response:
                 for row in batch.results:
@@ -47,8 +47,7 @@ def fungsi_report_metrik_campaign():
     else:
         try:
             google_ads_client = GoogleAdsClient.load_from_storage(path='./google-ads.yaml', version='v16')
-            customer_id = "6252346754"
-            hasil = main(google_ads_client, customer_id)
+            hasil = main(google_ads_client, google_ads_customer_id)
             return hasil
         except GoogleAdsException as ex:
             print(
@@ -60,4 +59,3 @@ def fungsi_report_metrik_campaign():
                 if error.location:
                     for field_path_element in error.location.field_path_elements:
                         print(f"\t\tOn field: {field_path_element.field_name}")
-            sys.exit(1)

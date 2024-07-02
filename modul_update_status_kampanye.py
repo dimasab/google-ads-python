@@ -71,4 +71,3 @@ def fungsi_update_status_kampanye(google_ads_customer_id, id_kampanye, statusakt
                 if error.location:
                     for field_path_element in error.location.field_path_elements:
                         print(f"\t\tOn field: {field_path_element.field_name}")
-            sys.exit(1)

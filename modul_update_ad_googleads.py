@@ -32,7 +32,6 @@ def fungsi_update_ad_googleads(google_ads_customer_id, ad_id, urltarget, jenispr
                 if error.location:
                     for field_path_element in error.location.field_path_elements:
                         print(f"\t\tOn field: {field_path_element.field_name}")
-            sys.exit(1)
 
 
 ######################################################## SELESAI APP ########################################################

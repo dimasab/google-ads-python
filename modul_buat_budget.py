@@ -49,4 +49,3 @@ def fungsi_buat_budget(client, customer_id, budgetcampaignperbulan):
                 if error.location:
                     for field_path_element in error.location.field_path_elements:
                         print(f"\t\tOn field: {field_path_element.field_name}")
-            sys.exit(1)

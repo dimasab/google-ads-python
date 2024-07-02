@@ -43,7 +43,6 @@ def fungsi_hapus_campaign_googleads(google_ads_customer_id, campaign_id):
                 if error.location:
                     for field_path_element in error.location.field_path_elements:
                         print(f"\t\tOn field: {field_path_element.field_name}")
-            sys.exit(1)
 ######################################################## SELESAI APP ########################################################
 ###########################################################################################################################
 ###########################################################################################################################

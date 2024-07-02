@@ -26,7 +26,7 @@ def fungsi_buat_ad(client, customer_id, ad_group_resource_name, urltarget, jenis
             print(f"create_ad_group_ad sukses setelah gagal 1x")
             return id_ad
         except:
-            print("create_ad_group_ad gagal 2x, mulai pakai namaproduk dan spesifikasiproduk fallback")
+            print("create_ad_group_ad gagal 2x, mulai pakai fallback")
             namaproduk_fallback = "Original"
             spesifikasiproduk_fallback = "Spesifikasi terbaru"
             id_ad = create_ad_group_ad(client, customer_id, ad_group_resource_name, urltarget, jenisproduk, merekproduk, namaproduk_fallback, spesifikasiproduk_fallback, hargaproduk, lokasitoko)
@@ -56,7 +56,7 @@ def fungsi_update_ad(client, customer_id, ad_id, urltarget, jenisproduk, merekpr
             update_ad_group_ad(client, customer_id, ad_id, urltarget, jenisproduk, merekproduk, namaproduk_teratur, spesifikasiproduk_teratur, hargaproduk, lokasitoko)
             print(f"update_ad_group_ad sukses setelah gagal 1x")
         except:
-            print("update_ad_group_ad gagal 2x, mulai pakai modul edit kata")
+            print("update_ad_group_ad gagal 2x, mulai pakai fallback")
             namaproduk_fallback = "Original"
             spesifikasiproduk_fallback = "Spesifikasi terbaru"
             update_ad_group_ad(client, customer_id, ad_id, urltarget, jenisproduk, merekproduk, namaproduk_fallback, spesifikasiproduk_fallback, hargaproduk, lokasitoko)
