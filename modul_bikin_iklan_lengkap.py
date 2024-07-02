@@ -14,7 +14,7 @@ from modul_buat_budget import fungsi_buat_budget
 ###########################################################################################################################
 ###########################################################################################################################
 ######################################################## MULAI APP ########################################################
-def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, urltarget, durasihari, budgetcampaignperbulan, lokasitoko, bahasa, negara, tanggalexpiry):
+def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, urltarget, durasihari, budgetcampaignperbulan, lokasitoko, bahasa, negara, tanggalexpiry, id_post_produk):
 #modifikasi dari add_responsive_search_ad_full
 
     print("/python-bikin-campaign-googleads terpanggil")
@@ -34,7 +34,7 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
     COUNTRY_CODE = negara
 
 
-    def main(client, customer_id, customizer_attribute_name=None):
+    def main(client, customer_id, idkampanye_idadgroup_idad, customizer_attribute_name=None):
         """
         The main method that creates all necessary entities for the example.
 
@@ -44,11 +44,6 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
             customizer_attribute_name: The name of the customizer attribute to be
                 created
         """
-
-
-
-        global id_ad
-
 
 
         if customizer_attribute_name:
@@ -63,34 +58,49 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
             print("fungsi_buat_budget sukses")
         except Exception as e:
             print("fungsi_buat_budget gagal")
-            raise e  # Raise the exception to stop further execution
+            return idkampanye_idadgroup_idad
 
 
 
         try:
             campaign_resource_name = create_campaign(client, customer_id, campaign_budget, durasihari, tanggalexpiry)
-            print("create_campaign sukses")
+            
+            bagian = campaign_resource_name.split("/")
+            id_kampanye = bagian[bagian.index("campaigns") + 1]
+            idkampanye_idadgroup_idad['id_kampanye'] = int(id_kampanye)
+
+            print(f"create_campaign sukses, id_kampanye adalah {id_kampanye}")
+
         except Exception as e:
             print("create_campaign gagal")
-            raise e  # Raise the exception to stop further execution
+            return idkampanye_idadgroup_idad
 
 
 
         try:
             ad_group_resource_name = create_ad_group(client, customer_id, campaign_resource_name)
-            print("create_ad_group sukses")
+
+            bagian = ad_group_resource_name.split("/")
+            id_adgroup = bagian[bagian.index("adGroups") + 1]
+            idkampanye_idadgroup_idad['id_adgroup'] = int(id_adgroup)
+
+            print(f"create_ad_group sukses, id_adgroup adalah {id_adgroup}")
+
         except Exception as e:
             print("create_ad_group gagal")
-            raise e  # Raise the exception to stop further execution
+            return idkampanye_idadgroup_idad
 
 
 
         try:
             id_ad = fungsi_buat_ad(client, customer_id, ad_group_resource_name, urltarget, jenisproduk, merekproduk, namaproduk, spesifikasiproduk, hargaproduk, lokasitoko)
-            print("fungsi_buat_ad sukses")
+
+            idkampanye_idadgroup_idad['id_ad'] = int(id_ad)
+
+            print(f"fungsi_buat_ad sukses, id_ad adalah {id_ad}")
         except Exception as e:
             print("fungsi_buat_ad gagal")
-            raise e  # Raise the exception to stop further execution
+            return idkampanye_idadgroup_idad
 
 
 
@@ -99,7 +109,7 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
             print("fungsi_buat_keyword sukses")
         except Exception as e:
             print("fungsi_buat_keyword gagal")
-            raise e  # Raise the exception to stop further execution
+            return idkampanye_idadgroup_idad
 
 
 
@@ -108,7 +118,12 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
             print("fungsi_bikin_lokasi sukses")
         except Exception as e:
             print("fungsi_bikin_lokasi gagal")
-            raise e  # Raise the exception to stop further execution
+            return idkampanye_idadgroup_idad
+
+
+
+
+        return idkampanye_idadgroup_idad
 
 
 
@@ -147,6 +162,7 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
         print(f"Added a customizer attribute with resource name: '{resource_name}'")
 
         return resource_name
+
 
 
     def link_customizer_attribute_to_customer(
@@ -190,6 +206,7 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
         )
 
 
+
     def create_campaign(client, customer_id, campaign_budget, durasihari, tanggalexpiry):
         """Creates campaign resource.
 
@@ -201,11 +218,11 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
         Returns:
         Campaign resource name.
         """
-        global id_kampanye #id campaign yang akan dibuat
         campaign_service = client.get_service("CampaignService")
         campaign_operation = client.get_type("CampaignOperation")
         campaign = campaign_operation.create
-        campaign.name = f"email@tester.com {uuid.uuid4()}"
+        # campaign.name = f"email@tester.com {uuid.uuid4()}"
+        campaign.name = f"Campaign Post ID {id_post_produk} | UUID {uuid.uuid4()}"
         campaign.advertising_channel_type = (
             client.enums.AdvertisingChannelTypeEnum.SEARCH
         )
@@ -255,12 +272,8 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
         resource_name = campaign_response.results[0].resource_name
         print(f"Created campaign {resource_name}.")
 
-        # Split the string by "/"
-        bagian = resource_name.split("/")
-        # Get the part after "campaigns"
-        id_kampanye = bagian[bagian.index("campaigns") + 1]
-
         return resource_name
+
 
 
     def create_ad_group(client, customer_id, campaign_resource_name):
@@ -274,12 +287,12 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
         Returns:
         Ad group ID.
         """
-        global id_adgroup #id adgroup yang akan dibuat
         ad_group_service = client.get_service("AdGroupService")
 
         ad_group_operation = client.get_type("AdGroupOperation")
         ad_group = ad_group_operation.create
-        ad_group.name = f"Testing AdGroup dari API {uuid.uuid4()}"
+        # ad_group.name = f"Testing AdGroup dari API {uuid.uuid4()}"
+        ad_group.name = f"AdGroup Post ID {id_post_produk} | UUID {uuid.uuid4()}"
         ad_group.status = client.enums.AdGroupStatusEnum.ENABLED
         ad_group.campaign = campaign_resource_name
         ad_group.type_ = client.enums.AdGroupTypeEnum.SEARCH_STANDARD
@@ -294,12 +307,8 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
         ad_group_resource_name = ad_group_response.results[0].resource_name
         print(f"Created ad group {ad_group_resource_name}.")
 
-        # Split the string by "/"
-        bagian = ad_group_resource_name.split("/")
-        # Get the part after "adGroups"
-        id_adgroup = bagian[bagian.index("adGroups") + 1]
-
         return ad_group_resource_name
+
 
 
     if __name__ == "__main__":
@@ -307,29 +316,29 @@ def fungsi_bikin_iklan_lengkap(google_ads_customer_id, jenisproduk, merekproduk,
     else:
         customer_id = google_ads_customer_id
         googleads_client = GoogleAdsClient.load_from_storage(path='./google-ads.yaml', version='v16')
+
+        idkampanye_idadgroup_idad = {
+            "id_kampanye": None, 
+            "id_adgroup": None, 
+            "id_ad": None
+        }
+
         try:
-            main(googleads_client, customer_id)
-            # print (f"akan mereturn id kampanye {id_kampanye}, id adgroup {id_adgroup}, dan id ad {id_ad} didalam satu array")
-            idkampanye_idadgroup_idad = {
-                "id_kampanye": int(id_kampanye), 
-                "id_adgroup": int(id_adgroup), 
-                "id_ad": int(id_ad)
-            }
-            # print(idkampanye_idadgroup_idad)
-            # print(f"id kampanye adalah {idkampanye_idadgroup_idad["id_kampanye"]}")
-            # print(f"id adgroup adalah {idkampanye_idadgroup_idad["id_adgroup"]}")
-            # print(f"id ad adalah {idkampanye_idadgroup_idad["id_ad"]}")
+            idkampanye_idadgroup_idad = main(googleads_client, customer_id, idkampanye_idadgroup_idad)
             return idkampanye_idadgroup_idad
         except GoogleAdsException as ex:
+
             print(
                 f'Request with ID "{ex.request_id}" failed with status '
                 f'"{ex.error.code().name}" and includes the following errors:'
             )
+
             for error in ex.failure.errors:
                 print(f'Error with message "{error.message}".')
                 if error.location:
                     for field_path_element in error.location.field_path_elements:
                         print(f"\t\tOn field: {field_path_element.field_name}")
+            
 
 ######################################################## SELESAI APP ########################################################
 ###########################################################################################################################
