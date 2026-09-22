@@ -1,0 +1,49 @@
+*.idea
+*.pyc
+*.iml
+.python-version
+
+# Secrets / local credentials - never commit these
+.env
+google-ads.yaml
+client_secret_*.json
+*.env
+
+# Virtualenv / OS / caches
+dimas-env/
+__pycache__/
+.DS_Store
+
+# Distribution / packaging
+.Python
+build/
+develop-eggs/
+dist/
+downloads/
+eggs/
+.eggs/
+lib/
+lib64/
+parts/
+sdist/
+var/
+wheels/
+*.egg-info/
+.installed.cfg
+*.egg
+MANIFEST
+
+# Unit test / coverage reports
+htmlcov/
+.tox/
+.coverage
+.coverage.*
+.cache
+nosetests.xml
+coverage.xml
+*.cover
+.hypothesis/
+.pytest_cache/
+
+# Sphinx documentation
+docs/_build/
