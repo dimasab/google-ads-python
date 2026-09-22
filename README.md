@@ -1,3 +1,5 @@
+-------------------------------ok this old repo can go public-------------------------------
+
 # Google Ads Automation for ads.ruanglaptop.com
 
 This repository is based on the official [Google Ads API Client Library for Python](https://github.com/googleads/google-ads-python) (see [README.rst](README.rst)), with a custom Flask application layered on top that automates Google Ads campaign management for products listed on **ads.ruanglaptop.com**.
